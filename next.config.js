@@ -7,6 +7,19 @@ const nextConfig = {
     NEXT_PUBLIC_TENANT_ID: process.env.NEXT_PUBLIC_TENANT_ID,
     NEXT_PUBLIC_AUTHORITY: process.env.NEXT_PUBLIC_AUTHORITY,
   },
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'Cross-Origin-Opener-Policy',
+            value: 'same-origin-allow-popups',
+          },
+        ],
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;
