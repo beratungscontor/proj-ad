@@ -9,17 +9,19 @@ export default function Home() {
   const { instance, inProgress } = useMsal();
   const isAuthenticated = useIsAuthenticated();
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Use MSAL's built-in status to determine if we are currently loading/interacting
+  const isLoading = inProgress !== InteractionStatus.None;
+
   useEffect(() => {
+    // Only redirect if authenticated and MSAL has finished all interactions
     if (isAuthenticated && inProgress === InteractionStatus.None) {
       router.push('/dashboard');
     }
   }, [isAuthenticated, inProgress, router]);
 
   const handleLogin = async () => {
-    setLoading(true);
     setError(null);
     try {
       await instance.loginPopup({
@@ -27,10 +29,9 @@ export default function Home() {
       });
     } catch (err: any) {
       if (err?.errorCode !== 'user_cancelled') {
-        setError('Sign-in failed. Please try again.');
+        setError(err?.message || 'Sign-in failed. Please try again.');
+        console.error('Login error:', err);
       }
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -76,9 +77,9 @@ export default function Home() {
           <button
             className={styles.loginButton}
             onClick={handleLogin}
-            disabled={loading}
+            disabled={isLoading}
           >
-            {loading ? (
+            {isLoading ? (
               <>⏳ Signing in...</>
             ) : (
               <>🔐 Sign in with Microsoft</>
