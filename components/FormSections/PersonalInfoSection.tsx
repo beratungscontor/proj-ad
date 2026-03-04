@@ -10,72 +10,72 @@ export default function PersonalInfoSection({ formData, onChange }: PersonalInfo
   return (
     <div className={styles.section}>
       <div className={styles.formGroup}>
-        <label>First Name <span className={styles.required}>*</span></label>
+        <label>Vorname <span className={styles.required}>*</span></label>
         <input
           type="text"
           value={formData.givenName || ''}
           onChange={(e) => onChange('givenName', e.target.value)}
-          placeholder="First name"
+          placeholder="Vorname"
         />
       </div>
 
       <div className={styles.formGroup}>
-        <label>Last Name <span className={styles.required}>*</span></label>
+        <label>Nachname <span className={styles.required}>*</span></label>
         <input
           type="text"
           value={formData.surname || ''}
           onChange={(e) => onChange('surname', e.target.value)}
-          placeholder="Last name"
+          placeholder="Nachname"
         />
       </div>
 
       <div className={styles.formGroup}>
-        <label>Display Name</label>
+        <label>Anzeigename</label>
         <input
           type="text"
           value={formData.displayName || ''}
           onChange={(e) => onChange('displayName', e.target.value)}
-          placeholder="Display name"
+          placeholder="Anzeigename (z.B. Max Mustermann)"
         />
       </div>
 
       <div className={styles.formGroup}>
-        <label>Email Address</label>
+        <label>E-Mail-Adresse</label>
         <input
           type="email"
           value={formData.mail || ''}
           onChange={(e) => onChange('mail', e.target.value)}
-          placeholder="email@company.com"
+          placeholder="email@firma.de"
         />
       </div>
 
       <div className={styles.formGroup}>
-        <label>Mobile Phone</label>
+        <label>Mobiltelefon</label>
         <input
           type="tel"
           value={formData.mobilePhone || ''}
           onChange={(e) => onChange('mobilePhone', e.target.value)}
-          placeholder="+1 (555) 123-4567"
+          placeholder="+49 151 1234567"
         />
       </div>
 
       <div className={styles.formGroup}>
-        <label>Office Phone</label>
+        <label>Bürotelefon</label>
         <input
           type="tel"
           value={formData.businessPhones?.[0] || ''}
           onChange={(e) => onChange('businessPhones', e.target.value)}
-          placeholder="+1 (555) 987-6543"
+          placeholder="+49 30 123456"
         />
       </div>
 
       <div className={styles.formGroup}>
-        <label>Office Location</label>
+        <label>Bürostandort</label>
         <input
           type="text"
           value={formData.officeLocation || ''}
           onChange={(e) => onChange('officeLocation', e.target.value)}
-          placeholder="e.g. Building A, Floor 3"
+          placeholder="z.B. Gebäude A, 3. Stock"
         />
       </div>
     </div>

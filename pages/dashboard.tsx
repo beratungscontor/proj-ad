@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMsal, useIsAuthenticated } from '@azure/msal-react';
 import { InteractionStatus } from '@azure/msal-browser';
 import Head from 'next/head';
@@ -48,10 +48,10 @@ export default function Dashboard() {
       const accessData = await accessCheckResponse.json();
       setHasAccess(accessData.hasAccess);
       if (!accessData.hasAccess) {
-        setAccessError('You are not a member of the required security group to access this dashboard.');
+        setAccessError('Sie sind kein Mitglied der erforderlichen Sicherheitsgruppe für den Zugriff auf dieses Dashboard.');
       }
     } catch {
-      setAccessError('Failed to verify your access permissions. Please try signing in again.');
+      setAccessError('Überprüfung Ihrer Zugriffsrechte fehlgeschlagen. Bitte melden Sie sich erneut an.');
     } finally {
       setLoading(false);
     }
@@ -62,7 +62,7 @@ export default function Dashboard() {
       <Layout>
         <div className={styles.loading}>
           <div className={styles.loadingSpinner} />
-          <p className={styles.loadingText}>Verifying your access...</p>
+          <p className={styles.loadingText}>Ihre Zugangsberechtigungen werden überprüft...</p>
         </div>
       </Layout>
     );
@@ -74,7 +74,7 @@ export default function Dashboard() {
         <div className={styles.errorContainer}>
           <div className={styles.accessDenied}>
             <div className={styles.accessDeniedIcon}>🚫</div>
-            <h2>Access Denied</h2>
+            <h2>Zugriff verweigert</h2>
             <p>{accessError}</p>
           </div>
         </div>
@@ -85,13 +85,13 @@ export default function Dashboard() {
   return (
     <>
       <Head>
-        <title>Dashboard — AzureAdmin</title>
-        <meta name="description" content="Manage employee profiles in Microsoft Entra ID." />
+        <title>Dashboard — Mitarbeiter-Portal</title>
+        <meta name="description" content="Verwalten Sie Mitarbeiterprofile in Microsoft Entra ID." />
       </Head>
       <Layout>
         <div className={styles.dashboardHeader}>
-          <h1>Employee Directory</h1>
-          <p>Search for an employee and update their profile in Microsoft Entra ID</p>
+          <h1>Mitarbeiterverzeichnis</h1>
+          <p>Suchen Sie nach einem Mitarbeiter und aktualisieren Sie sein Profil in Microsoft Entra ID</p>
         </div>
 
         <div className={styles.content}>
@@ -100,15 +100,12 @@ export default function Dashboard() {
           </div>
           <div className={styles.main}>
             {selectedEmployee ? (
-              <EmployeeForm
-                key={selectedEmployee.id}
-                employee={selectedEmployee}
-              />
+              <EmployeeForm employee={selectedEmployee} onSave={handleSave} />
             ) : (
               <div className={styles.placeholder}>
-                <div className={styles.placeholderIcon}>👈</div>
-                <h3>No Employee Selected</h3>
-                <p>Use the search panel to find an employee and manage their profile.</p>
+                <i className={styles.placeholderIcon}>👥</i>
+                <h3>Mitarbeiter auswählen</h3>
+                <p>Suchen Sie links nach einem Mitarbeiter, um dessen Profil anzuzeigen und zu bearbeiten.</p>
               </div>
             )}
           </div>

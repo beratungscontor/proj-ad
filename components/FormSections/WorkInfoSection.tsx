@@ -10,48 +10,48 @@ export default function WorkInfoSection({ formData, onChange }: WorkInfoSectionP
   return (
     <div className={styles.section}>
       <div className={styles.formGroup}>
-        <label>Job Title</label>
+        <label>Position</label>
         <input
           type="text"
           value={formData.jobTitle || ''}
           onChange={(e) => onChange('jobTitle', e.target.value)}
-          placeholder="e.g. Software Engineer"
+          placeholder="z.B. Software Engineer"
         />
       </div>
 
       <div className={styles.formGroup}>
-        <label>Department</label>
+        <label>Abteilung</label>
         <input
           type="text"
           value={formData.department || ''}
           onChange={(e) => onChange('department', e.target.value)}
-          placeholder="e.g. Engineering"
+          placeholder="z.B. IT-Abteilung"
         />
       </div>
 
       <div className={styles.formGroup}>
-        <label>Company Name</label>
+        <label>Firmenname</label>
         <input
           type="text"
           value={formData.companyName || ''}
           onChange={(e) => onChange('companyName', e.target.value)}
-          placeholder="Company name"
+          placeholder="Firmenname"
         />
       </div>
 
       <div className={styles.formGroup}>
-        <label>Manager UPN</label>
+        <label>Manager-UPN</label>
         {/* We store manager UPN in a dedicated field 'managerUpn' so we
             don't accidentally overwrite the manager object from Graph API */}
         <input
           type="email"
           value={(formData as any).managerUpn ?? formData.manager?.userPrincipalName ?? ''}
           onChange={(e) => onChange('managerUpn', e.target.value)}
-          placeholder="manager@company.com"
+          placeholder="manager@firma.de"
         />
         {formData.manager?.displayName && (
           <span className={styles.helperText}>
-            Current: {formData.manager.displayName}
+            Aktuell: {formData.manager.displayName}
           </span>
         )}
       </div>

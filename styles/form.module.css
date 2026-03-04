@@ -139,7 +139,7 @@
 
 .tab.active {
   background: var(--gradient-primary);
-  color: white;
+  color: var(--clr-text-on-primary);
   font-weight: 600;
   box-shadow: 0 2px 8px rgba(79, 142, 247, 0.4);
 }
@@ -220,7 +220,7 @@
 
 .submitButton {
   background: var(--gradient-primary);
-  color: white;
+  color: var(--clr-text-on-primary);
   border: none;
   padding: 0.7rem var(--space-xl);
   border-radius: var(--radius-md);
@@ -576,7 +576,7 @@
   background: var(--gradient-primary);
   border: none;
   border-radius: var(--radius-md);
-  color: white;
+  color: var(--clr-text-on-primary);
   font-size: var(--font-size-sm);
   font-weight: 600;
   cursor: pointer;

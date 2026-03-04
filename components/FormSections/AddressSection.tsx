@@ -10,24 +10,24 @@ export default function AddressSection({ formData, onChange }: AddressSectionPro
   return (
     <div className={styles.section}>
       <div className={styles.formGroup}>
-        <label>Street Address</label>
-        <input type="text" value={formData.streetAddress || ''} onChange={(e) => onChange('streetAddress', e.target.value)} placeholder="Street address" />
+        <label>Straße und Hausnummer</label>
+        <input type="text" value={formData.streetAddress || ''} onChange={(e) => onChange('streetAddress', e.target.value)} placeholder="Musterstraße 1" />
       </div>
       <div className={styles.formGroup}>
-        <label>City</label>
-        <input type="text" value={formData.city || ''} onChange={(e) => onChange('city', e.target.value)} placeholder="City" />
+        <label>Stadt</label>
+        <input type="text" value={formData.city || ''} onChange={(e) => onChange('city', e.target.value)} placeholder="Stadt" />
       </div>
       <div className={styles.formGroup}>
-        <label>State/Province</label>
-        <input type="text" value={formData.state || ''} onChange={(e) => onChange('state', e.target.value)} placeholder="State/Province" />
+        <label>Bundesland/Kanton</label>
+        <input type="text" value={formData.state || ''} onChange={(e) => onChange('state', e.target.value)} placeholder="Z.B. Bayern" />
       </div>
       <div className={styles.formGroup}>
-        <label>Postal Code</label>
-        <input type="text" value={formData.postalCode || ''} onChange={(e) => onChange('postalCode', e.target.value)} placeholder="Postal code" />
+        <label>Postleitzahl</label>
+        <input type="text" value={formData.postalCode || ''} onChange={(e) => onChange('postalCode', e.target.value)} placeholder="Postleitzahl" />
       </div>
       <div className={styles.formGroup}>
-        <label>Country</label>
-        <input type="text" value={formData.country || ''} onChange={(e) => onChange('country', e.target.value)} placeholder="Country" />
+        <label>Land</label>
+        <input type="text" value={formData.country || ''} onChange={(e) => onChange('country', e.target.value)} placeholder="Deutschland" />
       </div>
     </div>
   );

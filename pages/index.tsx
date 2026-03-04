@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useMsal, useIsAuthenticated } from '@azure/msal-react';
 import { InteractionStatus } from '@azure/msal-browser';
 import Head from 'next/head';
@@ -31,56 +31,46 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Employee Admin Dashboard — Microsoft Entra ID</title>
-        <meta name="description" content="Manage employee profiles in Microsoft Entra ID using Microsoft Graph API." />
+        <title>Anmelden | Mitarbeiter-Portal</title>
       </Head>
-
       <div className={styles.loginPage}>
         <div className={styles.loginCard}>
           <div className={styles.loginBrand}>
-            <div className={styles.loginLogoIcon}>🏢</div>
-            <h1 className={styles.loginTitle}>AzureAdmin</h1>
+            <div className={styles.loginLogoIcon}>✨</div>
+            <h1 className={styles.loginTitle}>Mitarbeiter-Portal</h1>
           </div>
 
           <p className={styles.loginSubtitle}>
-            HR & IT administration portal for Microsoft Entra ID employee profile management.
+            Verwalten Sie das Profil Ihres Teams. Alle Updates werden sofort mit Microsoft Entra ID (Azure AD) synchronisiert.
           </p>
 
           <div className={styles.loginFeatures}>
             <div className={styles.loginFeature}>
-              <span>👤</span>
-              <span>Manage personal & work information</span>
-            </div>
-            <div className={styles.loginFeature}>
-              <span>🏗️</span>
-              <span>Update manager relationships in real-time</span>
+              <span>⚡</span>
+              <span>Echtzeit-Updates in Entra ID</span>
             </div>
             <div className={styles.loginFeature}>
               <span>📋</span>
-              <span>Full audit trail of all changes</span>
+              <span>Vollständiges detailliertes Audit-Log</span>
             </div>
             <div className={styles.loginFeature}>
-              <span>🔐</span>
-              <span>Security group access control</span>
+              <span>🔒</span>
+              <span>Sicherer Login über Microsoft</span>
             </div>
           </div>
 
-          {error && <div className={styles.loginError}>{error}</div>}
+          {error && <div className={styles.loginError}>✕ {error}</div>}
 
           <button
             className={styles.loginButton}
             onClick={handleLogin}
             disabled={isLoading}
           >
-            {isLoading ? (
-              <>⏳ Signing in...</>
-            ) : (
-              <>🔐 Sign in with Microsoft</>
-            )}
+            {isLoading ? '⏳ Anmelden...' : 'Mit Microsoft anmelden'}
           </button>
 
           <p className={styles.loginFooter}>
-            Secured by Microsoft Entra ID · HR &amp; IT access only
+            Gesichert durch Microsoft Entra ID · Nur für HR &amp; IT Zugriff
           </p>
         </div>
       </div>

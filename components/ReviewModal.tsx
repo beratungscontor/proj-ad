@@ -10,22 +10,22 @@ interface ReviewModalProps {
 }
 
 const FIELD_LABELS: Record<string, string> = {
-  givenName: 'First Name',
-  surname: 'Last Name',
-  displayName: 'Display Name',
+  givenName: 'Vorname',
+  surname: 'Nachname',
+  displayName: 'Anzeigename',
   mail: 'Email',
-  mobilePhone: 'Mobile Phone',
-  businessPhones: 'Office Phone',
+  mobilePhone: 'Mobiltelefon',
+  businessPhones: 'Bürotelefon',
   officeLocation: 'Office Location',
-  jobTitle: 'Job Title',
-  department: 'Department',
-  companyName: 'Company',
-  managerUpn: 'Manager',
-  streetAddress: 'Street Address',
-  city: 'City',
-  state: 'State',
-  postalCode: 'Postal Code',
-  country: 'Country',
+  jobTitle: 'Position',
+  department: 'Abteilung',
+  companyName: 'Firmenname',
+  managerUpn: 'Manager-UPN',
+  streetAddress: 'Straße',
+  city: 'Stadt',
+  state: 'Bundesland',
+  postalCode: 'PLZ',
+  country: 'Land',
 };
 
 const REVIEW_FIELDS = [
@@ -66,14 +66,14 @@ export default function ReviewModal({
   return (
     <div className={styles.modal}>
       <div className={styles.modalContent}>
-        <h2 className={styles.modalTitle}>Review Changes</h2>
+        <h2 className={styles.modalTitle}>Änderungen überprüfen</h2>
         <p className={styles.modalSubtitle}>
-          {Object.keys(changes).length} field{Object.keys(changes).length !== 1 ? 's' : ''} will be updated
+          {Object.keys(changes).length} Feld{Object.keys(changes).length !== 1 ? 'er' : ''} {Object.keys(changes).length !== 1 ? 'werden' : 'wird'} aktualisiert
         </p>
 
         <div className={styles.changesList}>
           {Object.keys(changes).length === 0 ? (
-            <div className={styles.noChanges}>No changes detected</div>
+            <div className={styles.noChanges}>Keine Änderungen erkannt</div>
           ) : (
             Object.entries(changes).map(([field, change]) => (
               <div key={field} className={styles.changeItem}>
@@ -90,14 +90,14 @@ export default function ReviewModal({
 
         <div className={styles.modalActions}>
           <button onClick={onCancel} className={styles.cancelButton} disabled={loading}>
-            Cancel
+            Abbrechen
           </button>
           <button
             onClick={onConfirm}
             className={styles.confirmButton}
             disabled={loading || Object.keys(changes).length === 0}
           >
-            {loading ? '⏳ Saving...' : '✔ Confirm & Save'}
+            {loading ? '⏳ Speichern...' : '✔ Bestätigen & Speichern'}
           </button>
         </div>
       </div>

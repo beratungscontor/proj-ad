@@ -40,13 +40,13 @@ export default function EmployeeSearch({ onEmployeeSelected }: EmployeeSearchPro
 
   return (
     <div className={styles.searchContainer}>
-      <h2 className={styles.searchLabel}>Find Employee</h2>
+      <h2 className={styles.searchLabel}>Mitarbeiter finden</h2>
 
       <div className={styles.searchInputWrapper}>
         <i className={styles.searchIcon}>🔍</i>
         <input
           type="text"
-          placeholder="Search by name or email..."
+          placeholder="Suchen nach Name oder E-Mail..."
           value={query}
           onChange={(e) => handleSearch(e.target.value)}
           className={styles.searchInput}
@@ -55,10 +55,10 @@ export default function EmployeeSearch({ onEmployeeSelected }: EmployeeSearchPro
       </div>
 
       {query.length > 0 && query.length < 2 && (
-        <p className={styles.searchHint}>Type at least 2 characters to search</p>
+        <p className={styles.searchHint}>Geben Sie mindestens 2 Zeichen ein</p>
       )}
 
-      {loading && <div className={styles.loading}>Searching...</div>}
+      {loading && <div className={styles.loading}>Suchen...</div>}
       {error && <div className={styles.error}>{error}</div>}
 
       {results.length > 0 && (
@@ -90,7 +90,7 @@ export default function EmployeeSearch({ onEmployeeSelected }: EmployeeSearchPro
       )}
 
       {!loading && !error && query.length >= 2 && results.length === 0 && (
-        <p className={styles.searchHint}>No employees found matching "{query}"</p>
+        <p className={styles.searchHint}>Keine Mitarbeiter gefunden für "{query}"</p>
       )}
     </div>
   );

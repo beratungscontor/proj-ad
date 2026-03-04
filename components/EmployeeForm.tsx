@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMsal } from '@azure/msal-react';
 import { Employee } from '../lib/types';
 import PersonalInfoSection from './FormSections/PersonalInfoSection';
@@ -240,7 +240,7 @@ export default function EmployeeForm({ employee }: EmployeeFormProps) {
           onClick={() => setShowReview(true)}
           disabled={loading}
         >
-          {loading ? '⏳ Saving...' : '✔ Review & Save'}
+          {loading ? '⏳ Saving...' : '✔ Überprüfen & Speichern'}
         </button>
       </div>
 

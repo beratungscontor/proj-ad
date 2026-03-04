@@ -8,22 +8,22 @@ interface AuditLogProps {
 }
 
 const FIELD_LABELS: Record<string, string> = {
-  givenName: 'First Name',
-  surname: 'Last Name',
-  displayName: 'Display Name',
-  mail: 'Email',
-  mobilePhone: 'Mobile Phone',
-  businessPhones: 'Office Phone',
-  officeLocation: 'Office Location',
-  jobTitle: 'Job Title',
-  department: 'Department',
-  companyName: 'Company',
+  givenName: 'Vorname',
+  surname: 'Nachname',
+  displayName: 'Anzeigename',
+  mail: 'E-Mail',
+  mobilePhone: 'Mobiltelefon',
+  businessPhones: 'Bürotelefon',
+  officeLocation: 'Bürostandort',
+  jobTitle: 'Position',
+  department: 'Abteilung',
+  companyName: 'Firmenname',
   manager: 'Manager',
-  streetAddress: 'Street Address',
-  city: 'City',
-  state: 'State',
-  postalCode: 'Postal Code',
-  country: 'Country',
+  streetAddress: 'Straße',
+  city: 'Stadt',
+  state: 'Bundesland',
+  postalCode: 'PLZ',
+  country: 'Land',
 };
 
 export default function AuditLog({ employeeId, refreshKey }: AuditLogProps) {
@@ -57,14 +57,14 @@ export default function AuditLog({ employeeId, refreshKey }: AuditLogProps) {
         className={styles.auditToggle}
         onClick={() => setExpanded((prev) => !prev)}
       >
-        📋 Change History ({logs.length}) {expanded ? '▲' : '▼'}
+        📋 Änderungsverlauf ({logs.length}) {expanded ? '▲' : '▼'}
       </button>
 
       {expanded && (
         <div className={styles.auditLog}>
-          {loading && <p className={styles.loading}>Loading history...</p>}
+          {loading && <p className={styles.loading}>Verlauf wird geladen...</p>}
           {!loading && logs.length === 0 && (
-            <p className={styles.auditEmpty}>No changes recorded yet.</p>
+            <p className={styles.auditEmpty}>Noch keine Änderungen erfasst.</p>
           )}
           {logs.map((log) => (
             <div
@@ -76,12 +76,12 @@ export default function AuditLog({ employeeId, refreshKey }: AuditLogProps) {
                   {new Date(log.timestamp).toLocaleString()}
                 </span>
                 <span className={`${styles.logStatus} ${styles[log.status]}`}>
-                  {log.status === 'success' ? '✓ Success' : '✕ Failed'}
+                  {log.status === 'success' ? '✓ Erfolgreich' : '✕ Fehlgeschlagen'}
                 </span>
               </div>
-              <div className={styles.logMeta}>Changed by: <strong>{log.changedBy}</strong></div>
+              <div className={styles.logMeta}>Geändert von: <strong>{log.changedBy}</strong></div>
               {log.errorMessage && (
-                <div className={styles.logError}>Error: {log.errorMessage}</div>
+                <div className={styles.logError}>Fehler: {log.errorMessage}</div>
               )}
               {log.changes && Object.keys(log.changes).length > 0 && (
                 <div className={styles.logChanges}>
