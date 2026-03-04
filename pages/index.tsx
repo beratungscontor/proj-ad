@@ -1,19 +1,22 @@
 import { useEffect, useState } from 'react';
 import { useMsal, useIsAuthenticated } from '@azure/msal-react';
+import { InteractionStatus } from '@azure/msal-browser';
 import Head from 'next/head';
+import { useRouter } from 'next/router';
 import styles from '../styles/dashboard.module.css';
 
 export default function Home() {
-  const { instance } = useMsal();
+  const { instance, inProgress } = useMsal();
   const isAuthenticated = useIsAuthenticated();
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      window.location.href = '/dashboard';
+    if (isAuthenticated && inProgress === InteractionStatus.None) {
+      router.push('/dashboard');
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, inProgress, router]);
 
   const handleLogin = async () => {
     setLoading(true);

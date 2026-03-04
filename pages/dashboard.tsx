@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useMsal, useIsAuthenticated } from '@azure/msal-react';
+import { InteractionStatus } from '@azure/msal-browser';
 import Head from 'next/head';
+import { useRouter } from 'next/router';
 import EmployeeSearch from '../components/EmployeeSearch';
 import EmployeeForm from '../components/EmployeeForm';
 import Layout from '../components/Layout';
@@ -9,20 +11,23 @@ import styles from '../styles/dashboard.module.css';
 
 export default function Dashboard() {
   const isAuthenticated = useIsAuthenticated();
-  const { instance, accounts } = useMsal();
+  const { instance, accounts, inProgress } = useMsal();
+  const router = useRouter();
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [hasAccess, setHasAccess] = useState(false);
   const [accessError, setAccessError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      window.location.href = '/';
+    if (!isAuthenticated && inProgress === InteractionStatus.None) {
+      router.push('/');
       return;
     }
-    checkAccess();
+    if (isAuthenticated) {
+      checkAccess();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated]);
+  }, [isAuthenticated, inProgress]);
 
   const checkAccess = async () => {
     try {
