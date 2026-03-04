@@ -21,6 +21,7 @@ export interface Employee {
     displayName: string;
     userPrincipalName: string;
   };
+  photoUrl?: string;
 }
 
 export interface EmployeeUpdate {

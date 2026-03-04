@@ -29,6 +29,8 @@ export default function EmployeeForm({ employee }: EmployeeFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'personal' | 'work' | 'address'>('personal');
+  const [selectedPhoto, setSelectedPhoto] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(employee.photoUrl || null);
 
   const handleFieldChange = (field: string, value: string) => {
     setFormData((prev) => {
@@ -41,6 +43,25 @@ export default function EmployeeForm({ employee }: EmployeeFormProps) {
     // Clear messages on edit
     setSuccess(null);
     setError(null);
+  };
+
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!['image/jpeg', 'image/png'].includes(file.type)) {
+      setError('Only JPEG and PNG images are allowed.');
+      return;
+    }
+    if (file.size > 4 * 1024 * 1024) {
+      setError('Profile photo must be less than 4MB.');
+      return;
+    }
+
+    setError(null);
+    setSuccess(null);
+    setSelectedPhoto(file);
+    setPhotoPreview(URL.createObjectURL(file));
   };
 
   const handleSubmit = async () => {
@@ -63,6 +84,34 @@ export default function EmployeeForm({ employee }: EmployeeFormProps) {
     const managerId = formData.managerUpn?.trim() || '';
 
     try {
+      // 1. Upload the photo first, if selected
+      if (selectedPhoto) {
+        const photoResponse = await fetch(`/api/graph/upload-photo?id=${employee.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': selectedPhoto.type },
+          body: selectedPhoto,
+        });
+
+        if (!photoResponse.ok) {
+          const photoData = await photoResponse.json();
+          throw new Error(photoData.error || 'Failed to upload profile photo.');
+        }
+
+        // Log photo upload audit
+        await fetch('/api/audit/log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            changedBy: accounts[0]?.username || 'unknown',
+            employeeId: employee.id,
+            employeeName: employee.displayName,
+            changes: { photo: { old: 'Previous Photo', new: 'New Photo Uploaded' } },
+            status: 'success',
+          }),
+        }).catch(() => { });
+      }
+
+      // 2. Update text fields and manager
       const response = await fetch('/api/graph/update-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -74,6 +123,7 @@ export default function EmployeeForm({ employee }: EmployeeFormProps) {
       if (response.ok) {
         setSuccess('Employee profile updated successfully!');
         setShowReview(false);
+        setSelectedPhoto(null);
 
         // Log the successful change to audit endpoint
         const changes = calculateChanges(employee, formData);
@@ -83,37 +133,40 @@ export default function EmployeeForm({ employee }: EmployeeFormProps) {
             new: managerId,
           };
         }
-        await fetch('/api/audit/log', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            changedBy: accounts[0]?.username || 'unknown',
-            employeeId: employee.id,
-            employeeName: employee.displayName,
-            changes,
-            status: 'success',
-          }),
-        }).catch(() => { }); // non-blocking
-      } else {
-        const errMsg = (data as any).details || (data as any).error || 'Failed to update employee';
-        setError(errMsg);
 
-        // Log the failure too
-        await fetch('/api/audit/log', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            changedBy: accounts[0]?.username || 'unknown',
-            employeeId: employee.id,
-            employeeName: employee.displayName,
-            changes: {},
-            status: 'failed',
-            errorMessage: errMsg,
-          }),
-        }).catch(() => { });
+        if (Object.keys(changes).length > 0) {
+          await fetch('/api/audit/log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              changedBy: accounts[0]?.username || 'unknown',
+              employeeId: employee.id,
+              employeeName: employee.displayName,
+              changes,
+              status: 'success',
+            }),
+          }).catch(() => { });
+        }
+      } else {
+        const errMsg = (data as any).details || (data as any).error || 'Failed to update employee metadata';
+        throw new Error(errMsg);
       }
-    } catch (err) {
-      setError('An unexpected error occurred while updating the employee profile.');
+    } catch (err: any) {
+      setError(err.message || 'An unexpected error occurred while updating the employee profile.');
+
+      // Log the failure
+      await fetch('/api/audit/log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          changedBy: accounts[0]?.username || 'unknown',
+          employeeId: employee.id,
+          employeeName: employee.displayName,
+          changes: {},
+          status: 'failed',
+          errorMessage: err.message || 'Update failed',
+        }),
+      }).catch(() => { });
     } finally {
       setLoading(false);
     }
@@ -128,9 +181,26 @@ export default function EmployeeForm({ employee }: EmployeeFormProps) {
   return (
     <div className={styles.formContainer}>
       <div className={styles.employeeHeader}>
-        <div className={styles.employeeAvatar}>
-          {employee.displayName?.charAt(0).toUpperCase() || '?'}
-        </div>
+        <label className={styles.avatarUploadWrapper}>
+          <input
+            type="file"
+            accept="image/jpeg,image/png"
+            onChange={handlePhotoSelect}
+            className={styles.hiddenFileInput}
+            disabled={loading}
+          />
+          <div className={`${styles.employeeAvatar} ${styles.avatarEditable}`}>
+            {photoPreview ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={photoPreview} alt="Profile" className={styles.avatarImage} />
+            ) : (
+              employee.displayName?.charAt(0).toUpperCase() || '?'
+            )}
+            <div className={styles.avatarOverlay}>
+              <span className={styles.avatarEditIcon}>📷</span>
+            </div>
+          </div>
+        </label>
         <div>
           <h2 className={styles.employeeName}>{employee.displayName}</h2>
           <p className={styles.employeeUpn}>{employee.userPrincipalName}</p>

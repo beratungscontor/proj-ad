@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import axios from 'axios';
+import { Buffer } from 'buffer';
 import { getGraphAccessToken } from '../../../lib/graph-token';
 import { Employee } from '../../../lib/types';
 
@@ -39,7 +40,38 @@ export default async function handler(
       },
     });
 
-    return res.status(200).json({ users: searchResponse.data.value });
+    const users = searchResponse.data.value;
+
+    // Fetch photos for all users in parallel
+    const usersWithPhotos = await Promise.all(
+      users.map(async (user: any) => {
+        let photoUrl = undefined;
+        try {
+          const photoResponse = await axios.get(
+            `https://graph.microsoft.com/v1.0/users/${user.id}/photo/$value`,
+            {
+              headers: { Authorization: `Bearer ${accessToken}` },
+              responseType: 'arraybuffer',
+            }
+          );
+
+          if (photoResponse.data) {
+            const base64 = Buffer.from(photoResponse.data, 'binary').toString('base64');
+            const contentType = photoResponse.headers['content-type'] || 'image/jpeg';
+            photoUrl = `data:${contentType};base64,${base64}`;
+          }
+        } catch (photoError) {
+          // It's normal for users not to have a photo (404), so we just ignore this error
+        }
+
+        return {
+          ...user,
+          photoUrl,
+        };
+      })
+    );
+
+    return res.status(200).json({ users: usersWithPhotos });
   } catch (error) {
     console.error('Search error:', error);
     return res.status(500).json({

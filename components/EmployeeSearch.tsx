@@ -73,7 +73,12 @@ export default function EmployeeSearch({ onEmployeeSelected }: EmployeeSearchPro
               onKeyDown={(e) => e.key === 'Enter' && onEmployeeSelected(employee)}
             >
               <div className={styles.resultAvatar}>
-                {employee.displayName?.charAt(0).toUpperCase() || '?'}
+                {employee.photoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={employee.photoUrl} alt="Avatar" className={styles.avatarImage} />
+                ) : (
+                  employee.displayName?.charAt(0).toUpperCase() || '?'
+                )}
               </div>
               <div className={styles.resultInfo}>
                 <div className={styles.resultName}>{employee.displayName}</div>
