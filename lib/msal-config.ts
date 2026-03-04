@@ -17,7 +17,7 @@ const msalConfig: Configuration = {
         if (containsPii) return;
         console.log(`[MSAL] ${LogLevel[level]}: ${message}`);
       },
-      level: LogLevel.Verbose,
+      logLevel: LogLevel.Verbose,
       piiLoggingEnabled: false,
     },
   },
