@@ -72,18 +72,20 @@ export default async function handler(
       'Content-Type': 'application/json',
     };
 
-    const userIds: string[] = [];
-    let nextLink: string | null = `${graphUrl}/users?$select=id&$top=999`;
-
-    while (nextLink) {
-      const listRes = await axios.get<{ value?: { id: string }[]; '@odata.nextLink'?: string }>(
-        nextLink,
-        { headers }
-      );
-      const users = listRes.data.value || [];
-      userIds.push(...users.map((u) => u.id));
-      nextLink = listRes.data['@odata.nextLink'] || null;
+    interface GraphUsersPage {
+      value?: { id: string }[];
+      '@odata.nextLink'?: string;
     }
+
+    const userIds: string[] = [];
+    let url: string = `${graphUrl}/users?$select=id&$top=999`;
+
+    do {
+      const res = await axios.get<GraphUsersPage>(url, { headers });
+      const users = res.data.value ?? [];
+      userIds.push(...users.map((u) => u.id));
+      url = res.data['@odata.nextLink'] ?? '';
+    } while (url);
 
     let updated = 0;
     const errors: string[] = [];
