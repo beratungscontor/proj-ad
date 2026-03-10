@@ -4,8 +4,8 @@
   "description": "Microsoft Entra ID Employee Profile Management Dashboard",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
-    "start": "next start -p ${PORT:-3000}",
+    "build": "next build && node scripts/copy-standalone.mjs",
+    "start": "node .next/standalone/server.js",
     "lint": "next lint"
   },
   "dependencies": {
