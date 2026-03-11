@@ -6,7 +6,6 @@ interface AuditLogProps {
   employeeId: string;
   refreshKey?: string | null; // triggers re-fetch when a save completes
 }
-
 const FIELD_LABELS: Record<string, string> = {
   givenName: 'Vorname',
   surname: 'Nachname',
