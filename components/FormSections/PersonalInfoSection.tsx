@@ -5,7 +5,6 @@ interface PersonalInfoSectionProps {
   formData: Partial<Employee>;
   onChange: (field: string, value: string) => void;
 }
-
 export default function PersonalInfoSection({ formData, onChange }: PersonalInfoSectionProps) {
   return (
     <div className={styles.section}>
