@@ -1,6 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import axios from 'axios';
-import { Buffer } from 'buffer';
+import axios, { AxiosResponse } from 'axios';
 import { getGraphAccessToken } from '../../../lib/graph-token';
 import { Employee } from '../../../lib/types';
 
@@ -43,7 +42,7 @@ export default async function handler(
     };
 
     while (nextLink) {
-      const response = await axios.get(nextLink, { headers: graphHeaders });
+      const response: AxiosResponse<any> = await axios.get(nextLink, { headers: graphHeaders });
       const users = response.data.value || [];
       allUsers = allUsers.concat(users);
       nextLink = response.data['@odata.nextLink'] || null;

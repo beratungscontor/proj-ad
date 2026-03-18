@@ -3,7 +3,7 @@ import styles from '../styles/form.module.css';
 
 interface ReviewModalProps {
   original: Employee;
-  updated: Partial<Employee> & { managerUpn?: string };
+  updated: Partial<Employee>;
   onConfirm: () => void;
   onCancel: () => void;
   loading: boolean;
@@ -19,7 +19,7 @@ const FIELD_LABELS: Record<string, string> = {
   jobTitle: 'Position',
   department: 'Abteilung',
   companyName: 'Firmenname',
-  managerUpn: 'Manager-UPN',
+
   streetAddress: 'Straße',
   city: 'Stadt',
   state: 'Bundesland',
@@ -30,7 +30,7 @@ const FIELD_LABELS: Record<string, string> = {
 // Removed 'mail' — it's read-only and should not appear as a change
 const REVIEW_FIELDS = [
   'givenName', 'surname', 'displayName', 'mobilePhone', 'businessPhones',
-  'officeLocation', 'jobTitle', 'department', 'companyName', 'managerUpn',
+  'officeLocation', 'jobTitle', 'department', 'companyName',
   'streetAddress', 'city', 'state', 'postalCode', 'country',
 ];
 
@@ -54,17 +54,9 @@ export default function ReviewModal({
   const changes: Record<string, { old: string; new: string }> = {};
 
   REVIEW_FIELDS.forEach((field) => {
-    let oldVal: string;
-    let newVal: string;
-
-    if (field === 'managerUpn') {
-      oldVal = normalize(original.manager?.userPrincipalName);
-      newVal = normalize(updated.managerUpn);
-    } else {
-      const key = field as keyof Employee;
-      oldVal = normalize(original[key]);
-      newVal = normalize((updated as any)[key]);
-    }
+    const key = field as keyof Employee;
+    const oldVal = normalize(original[key]);
+    const newVal = normalize((updated as any)[key]);
 
     if (oldVal !== newVal) {
       changes[field] = { old: oldVal || '—', new: newVal || '—' };
