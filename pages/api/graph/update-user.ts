@@ -38,7 +38,7 @@ export default async function handler(
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { userId, updates, managerId } = req.body;
+  const { userId, updates } = req.body;
 
   if (!userId) {
     return res.status(400).json({ error: 'User ID required' });
@@ -66,22 +66,6 @@ export default async function handler(
       }
     }
 
-    // Manager is a separate PUT to /manager/$ref — must be done after the profile patch
-    if (managerId && typeof managerId === 'string' && managerId.trim()) {
-      // First resolve the managerId: if it looks like a UPN (contains @), look up the user's object ID
-      let resolvedManagerId = managerId.trim();
-      if (resolvedManagerId.includes('@')) {
-        const managerLookup = await axios.get(
-          `${graphUrl}/users/${encodeURIComponent(resolvedManagerId)}`,
-          { headers, params: { $select: 'id' } }
-        );
-        resolvedManagerId = managerLookup.data.id;
-      }
-
-      const managerRef = { '@odata.id': `${graphUrl}/users/${resolvedManagerId}` };
-      await axios.put(`${graphUrl}/users/${userId}/manager/$ref`, managerRef, { headers });
-    }
-
     return res.status(200).json({ success: true, message: 'User updated successfully' });
   } catch (error: any) {
     console.error('Update error:', error);
@@ -92,4 +76,4 @@ export default async function handler(
       details,
     });
   }
-}
+}

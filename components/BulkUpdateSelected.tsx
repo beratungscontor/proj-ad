@@ -241,19 +241,37 @@ export default function BulkUpdateSelected() {
       {selected.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
           <div className={styles.searchHint}><strong>Ausgewählt:</strong> {selected.length} (max. 100)</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-            {selected.map((u) => (
-              <button
-                key={u.id}
-                type="button"
-                onClick={() => removeSelected(u.id)}
-                className={styles.tab}
-                style={{ padding: '6px 10px', borderRadius: '999px' }}
-                title="Entfernen"
-              >
-                {u.displayName} ×
-              </button>
-            ))}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            {selected.map((u) => {
+              const currentVal = getCurrentValue(u, attribute);
+              return (
+                <div
+                  key={u.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '6px 10px',
+                    background: 'var(--clr-surface-2, #f5f5f5)',
+                    borderRadius: '8px',
+                    fontSize: '0.82rem',
+                  }}
+                >
+                  <span style={{ fontWeight: 600, flex: '0 0 auto' }}>{u.displayName}</span>
+                  <span style={{ color: 'var(--clr-text-muted)', fontSize: '0.75rem', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {attrMeta?.label}: {currentVal || '—'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => removeSelected(u.id)}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', color: 'var(--clr-error, #e74c3c)', padding: 0, lineHeight: 1 }}
+                    title="Entfernen"
+                  >
+                    ×
+                  </button>
+                </div>
+              );
+            })}
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button type="button" className={styles.cancelButton} onClick={clearSelection}>

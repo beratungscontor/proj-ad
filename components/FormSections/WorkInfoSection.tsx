@@ -37,23 +37,6 @@ export default function WorkInfoSection({ formData, onChange }: WorkInfoSectionP
           placeholder="Firmenname"
         />
       </div>
-
-      <div className={styles.formGroup}>
-        <label>Manager-UPN</label>
-        {/* We store manager UPN in a dedicated field 'managerUpn' so we
-            don't accidentally overwrite the manager object from Graph API */}
-        <input
-          type="email"
-          value={(formData as any).managerUpn ?? formData.manager?.userPrincipalName ?? ''}
-          onChange={(e) => onChange('managerUpn', e.target.value)}
-          placeholder="manager@firma.de"
-        />
-        {formData.manager?.displayName && (
-          <span className={styles.helperText}>
-            Aktuell: {formData.manager.displayName}
-          </span>
-        )}
-      </div>
     </div>
   );
 }

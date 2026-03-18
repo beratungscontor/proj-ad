@@ -6,6 +6,7 @@ import { useRouter } from 'next/router';
 import EmployeeSearch from '../components/EmployeeSearch';
 import BulkUpdateSelected from '../components/BulkUpdateSelected';
 import EmployeeForm from '../components/EmployeeForm';
+import UserDirectory from '../components/UserDirectory';
 import Layout from '../components/Layout';
 import { Employee } from '../lib/types';
 import styles from '../styles/dashboard.module.css';
@@ -58,10 +59,6 @@ export default function Dashboard() {
     }
   };
 
-  /**
-   * Callback from EmployeeForm when user data is refreshed after a save.
-   * Keeps dashboard state in sync with the latest server data.
-   */
   const handleEmployeeRefreshed = useCallback((refreshed: Employee) => {
     setSelectedEmployee(refreshed);
   }, []);
@@ -119,9 +116,10 @@ export default function Dashboard() {
               <div className={styles.placeholder}>
                 <i className={styles.placeholderIcon}>👥</i>
                 <h3>Mitarbeiter auswählen</h3>
-                <p>Suchen Sie links nach einem Mitarbeiter, um dessen Profil anzuzeigen und zu bearbeiten.</p>
+                <p>Suchen Sie links nach einem Mitarbeiter oder wählen Sie unten aus der Übersicht.</p>
               </div>
             )}
+            <UserDirectory onEmployeeSelected={setSelectedEmployee} />
           </div>
         </div>
       </Layout>

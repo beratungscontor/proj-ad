@@ -24,7 +24,7 @@ const PATCHABLE_FIELDS = [
 
 export default function EmployeeForm({ employee, onEmployeeRefreshed }: EmployeeFormProps) {
   const { accounts } = useMsal();
-  const [formData, setFormData] = useState<Employee & { managerUpn?: string }>(employee);
+  const [formData, setFormData] = useState<Employee>(employee);
   const [showReview, setShowReview] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -107,7 +107,7 @@ export default function EmployeeForm({ employee, onEmployeeRefreshed }: Employee
       updates.businessPhones = formData.businessPhones;
     }
 
-    const managerId = formData.managerUpn?.trim() || '';
+
 
     try {
       // 1. Upload the photo first, if selected
@@ -142,7 +142,7 @@ export default function EmployeeForm({ employee, onEmployeeRefreshed }: Employee
       const response = await fetch('/api/graph/update-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: employee.id, updates, managerId }),
+        body: JSON.stringify({ userId: employee.id, updates }),
       });
 
       const data = await response.json();
@@ -154,12 +154,7 @@ export default function EmployeeForm({ employee, onEmployeeRefreshed }: Employee
 
         // Log the successful change to audit endpoint
         const changes = calculateChanges(employee, formData);
-        if (managerId && managerId !== (employee.manager?.userPrincipalName ?? '')) {
-          changes['manager'] = {
-            old: employee.manager?.userPrincipalName || '',
-            new: managerId,
-          };
-        }
+
 
         if (Object.keys(changes).length > 0) {
           await fetch('/api/audit/log', {
