@@ -1,4 +1,4 @@
-import { TableClient, AzureNamedKeyCredential, TableEntity } from '@azure/data-tables';
+import { TableClient, TableEntity } from '@azure/data-tables';
 import { AuditLog } from './types';
 
 const TABLE_NAME = 'AuditLog';
