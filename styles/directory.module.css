@@ -1,45 +1,120 @@
 /* ══════════════════════════════════════════════
-   USER DIRECTORY TABLE
+   USER DIRECTORY — full-width responsive table
 ══════════════════════════════════════════════ */
 .directorySection {
-  margin-top: var(--space-xl);
-  padding-top: var(--space-xl);
-  border-top: 1px solid var(--clr-border);
+  width: 100%;
 }
 
-.directoryToggle {
+/* ── toolbar ──────────────────────────────── */
+.toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.searchBox {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
-  background: transparent;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 12px;
+  font-size: 0.9rem;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 10px 14px 10px 36px;
   border: 1px solid var(--clr-border);
   border-radius: var(--radius-md);
-  padding: var(--space-sm) var(--space-md);
-  color: var(--clr-text-secondary);
   font-size: var(--font-size-sm);
+  background: var(--clr-surface);
+  color: var(--clr-text-primary);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: var(--clr-primary);
+  box-shadow: 0 0 0 3px rgba(79, 142, 247, 0.15);
+}
+
+.filterRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.filterSelect {
+  padding: 6px 10px;
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-md);
+  font-size: 0.78rem;
+  background: var(--clr-surface);
+  color: var(--clr-text-primary);
+  cursor: pointer;
+  min-width: 120px;
+  transition: border-color var(--transition-fast);
+}
+
+.filterSelect:focus {
+  outline: none;
+  border-color: var(--clr-primary);
+}
+
+.clearBtn {
+  padding: 6px 12px;
+  border: 1px solid var(--clr-error, #e74c3c);
+  border-radius: var(--radius-md);
+  font-size: 0.75rem;
   font-weight: 600;
+  background: transparent;
+  color: var(--clr-error, #e74c3c);
   cursor: pointer;
   transition: all var(--transition-fast);
-  margin-bottom: var(--space-md);
-  width: 100%;
-  justify-content: center;
+  white-space: nowrap;
 }
 
-.directoryToggle:hover {
-  border-color: var(--clr-primary);
-  color: var(--clr-text-primary);
-  background: rgba(79, 142, 247, 0.04);
+.clearBtn:hover {
+  background: var(--clr-error, #e74c3c);
+  color: white;
 }
 
-.directoryContent {
-  animation: fadeIn 0.3s ease both;
+/* ── loading / error ─────────────────────── */
+.loadingBar {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--clr-text-secondary);
+  font-size: var(--font-size-sm);
+  animation: pulse 1.4s ease-in-out infinite;
 }
 
+.errorBar {
+  text-align: center;
+  padding: 16px;
+  color: var(--clr-error, #e74c3c);
+  font-size: var(--font-size-sm);
+  background: rgba(231, 76, 60, 0.08);
+  border-radius: var(--radius-md);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* ── table wrapper ────────────────────────── */
 .tableWrapper {
   overflow-x: auto;
   border: 1px solid var(--clr-border);
   border-radius: var(--radius-md);
-  max-height: 600px;
+  max-height: calc(100vh - 260px);
   overflow-y: auto;
 }
 
@@ -50,49 +125,91 @@
   white-space: nowrap;
 }
 
+/* ── thead ────────────────────────────────── */
 .table thead {
   background: var(--clr-surface-2);
   position: sticky;
   top: 0;
-  z-index: 1;
+  z-index: 2;
 }
 
 .table th {
   text-align: left;
-  padding: 8px 10px;
+  padding: 9px 10px;
   font-weight: 700;
   color: var(--clr-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   border-bottom: 2px solid var(--clr-border);
   font-size: 0.65rem;
+  user-select: none;
 }
 
+/* ── tbody ────────────────────────────────── */
 .table td {
-  padding: 6px 10px;
+  padding: 5px 10px;
   color: var(--clr-text-primary);
   border-bottom: 1px solid var(--clr-border);
-  max-width: 180px;
+  max-width: 200px;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.clickableRow {
-  cursor: pointer;
+.row {
   transition: background var(--transition-fast);
 }
 
-.clickableRow:hover {
-  background: rgba(79, 142, 247, 0.06);
+.row:hover {
+  background: rgba(79, 142, 247, 0.04);
 }
 
-.clickableRow:active {
-  background: rgba(79, 142, 247, 0.12);
+/* ── editable cell ────────────────────────── */
+.editableCell {
+  cursor: pointer;
+  position: relative;
 }
 
+.editableCell:hover {
+  background: rgba(79, 142, 247, 0.08);
+  border-radius: 2px;
+}
+
+.editableCell:hover::after {
+  content: '✏️';
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.6rem;
+  opacity: 0.5;
+}
+
+.editingCell {
+  padding: 2px 4px !important;
+}
+
+.cellInput {
+  width: 100%;
+  padding: 4px 6px;
+  border: 2px solid var(--clr-primary);
+  border-radius: 4px;
+  font-size: var(--font-size-xs);
+  background: var(--clr-surface);
+  color: var(--clr-text-primary);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(79, 142, 247, 0.15);
+}
+
+/* ── read-only / empty ────────────────────── */
+.empty {
+  color: var(--clr-text-muted);
+  font-style: italic;
+}
+
+/* ── avatar ───────────────────────────────── */
 .miniAvatar {
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   background: var(--gradient-primary);
   border-radius: var(--radius-round);
   display: flex;
@@ -103,6 +220,13 @@
   color: white;
   overflow: hidden;
   flex-shrink: 0;
+  cursor: pointer;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.miniAvatar:hover {
+  transform: scale(1.15);
+  box-shadow: 0 2px 8px rgba(79, 142, 247, 0.3);
 }
 
 .miniAvatar img {
@@ -112,9 +236,30 @@
   border-radius: var(--radius-round);
 }
 
+/* ── footer ───────────────────────────────── */
 .rowCount {
   text-align: right;
   font-size: var(--font-size-xs);
   color: var(--clr-text-muted);
   padding: var(--space-sm) 0;
+}
+
+.noResults {
+  text-align: center;
+  padding: 32px !important;
+  color: var(--clr-text-muted);
+  font-style: italic;
+}
+
+/* ── responsive ───────────────────────────── */
+@media (max-width: 900px) {
+  .filterRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filterSelect {
+    min-width: unset;
+    width: 100%;
+  }
 }

@@ -28,6 +28,7 @@ const ALLOWED_GRAPH_FIELDS = new Set([
   'state',
   'postalCode',
   'country',
+  'onPremisesExtensionAttributes',
 ]);
 
 export default async function handler(
@@ -52,7 +53,6 @@ export default async function handler(
       'Content-Type': 'application/json',
     };
 
-    // Strip any fields that Graph API doesn't accept in a PATCH (e.g. id, manager object, userPrincipalName)
     if (updates && typeof updates === 'object') {
       const cleanPayload: Record<string, unknown> = {};
       for (const [key, value] of Object.entries(updates)) {
@@ -76,4 +76,5 @@ export default async function handler(
       details,
     });
   }
-}
+}
+

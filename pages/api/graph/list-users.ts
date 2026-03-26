@@ -15,7 +15,8 @@ interface ErrorResponse {
 
 /**
  * Fetch ALL internal users (@beratungscontor.de) from Microsoft Graph.
- * Uses pagination to ensure we get every user.
+ * Returns users WITHOUT photos for fast loading.
+ * Photos are loaded separately via /api/graph/user-photo.
  */
 export default async function handler(
   req: NextApiRequest,
@@ -29,13 +30,12 @@ export default async function handler(
     const accessToken = await getGraphAccessToken();
     const headers = { Authorization: `Bearer ${accessToken}` };
     const selectFields =
-      'id,userPrincipalName,displayName,givenName,surname,mail,mobilePhone,officeLocation,businessPhones,jobTitle,department,companyName,streetAddress,city,state,postalCode,country';
+      'id,userPrincipalName,displayName,givenName,surname,mail,mobilePhone,officeLocation,businessPhones,jobTitle,department,companyName,streetAddress,city,state,postalCode,country,onPremisesExtensionAttributes';
 
     let allUsers: any[] = [];
     let nextLink: string | null =
       `https://graph.microsoft.com/v1.0/users?$select=${selectFields}&$top=100&$filter=endsWith(mail,'@beratungscontor.de')&$count=true`;
 
-    // Microsoft Graph requires ConsistencyLevel header for advanced queries
     const graphHeaders = {
       ...headers,
       ConsistencyLevel: 'eventual',
@@ -47,46 +47,23 @@ export default async function handler(
       allUsers = allUsers.concat(users);
       nextLink = response.data['@odata.nextLink'] || null;
 
-      // Safety: stop after 1000 users to prevent runaway pagination
       if (allUsers.length > 1000) break;
     }
 
-    // Fetch photos in parallel (batches of 10 to avoid rate limiting)
-    const PHOTO_BATCH = 10;
-    const usersWithPhotos: Employee[] = [];
-
-    for (let i = 0; i < allUsers.length; i += PHOTO_BATCH) {
-      const batch = allUsers.slice(i, i + PHOTO_BATCH);
-      const results = await Promise.all(
-        batch.map(async (user: any) => {
-          let photoUrl: string | undefined;
-          try {
-            const photoResponse = await axios.get(
-              `https://graph.microsoft.com/v1.0/users/${user.id}/photo/$value`,
-              { headers, responseType: 'arraybuffer' }
-            );
-            if (photoResponse.data) {
-              const base64 = Buffer.from(photoResponse.data, 'binary').toString('base64');
-              const contentType = photoResponse.headers['content-type'] || 'image/jpeg';
-              photoUrl = `data:${contentType};base64,${base64}`;
-            }
-          } catch {
-            // no photo — that's fine
-          }
-          return { ...user, photoUrl } as Employee;
-        })
-      );
-      usersWithPhotos.push(...results);
-    }
+    // Map to Employee shape (no photos — those load progressively on the client)
+    const employees: Employee[] = allUsers.map((user: any) => ({
+      ...user,
+      onPremisesExtensionAttributes: user.onPremisesExtensionAttributes || {},
+    }));
 
     // Sort alphabetically by displayName
-    usersWithPhotos.sort((a, b) =>
+    employees.sort((a, b) =>
       (a.displayName || '').localeCompare(b.displayName || '', 'de')
     );
 
     return res.status(200).json({
-      users: usersWithPhotos,
-      totalCount: usersWithPhotos.length,
+      users: employees,
+      totalCount: employees.length,
     });
   } catch (error: any) {
     console.error('List users error:', error?.response?.data || error?.message);

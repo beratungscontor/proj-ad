@@ -19,6 +19,8 @@ export default function Dashboard() {
   const [hasAccess, setHasAccess] = useState(false);
   const [accessError, setAccessError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [showSidebar, setShowSidebar] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated && inProgress === InteractionStatus.None) {
@@ -61,7 +63,13 @@ export default function Dashboard() {
 
   const handleEmployeeRefreshed = useCallback((refreshed: Employee) => {
     setSelectedEmployee(refreshed);
+    // trigger directory refresh so the table shows updated data
+    setRefreshKey((k) => k + 1);
   }, []);
+
+  const handleCloseForm = () => {
+    setSelectedEmployee(null);
+  };
 
   if (loading) {
     return (
@@ -96,32 +104,53 @@ export default function Dashboard() {
       </Head>
       <Layout>
         <div className={styles.dashboardHeader}>
-          <h1>Mitarbeiterverzeichnis</h1>
-          <p>Suchen Sie nach einem Mitarbeiter und aktualisieren Sie sein Profil in Microsoft Entra ID</p>
+          <div className={styles.headerRow}>
+            <div>
+              <h1>Mitarbeiterverzeichnis</h1>
+              <p>Klicken Sie auf ein Feld, um es direkt zu bearbeiten. Klicken Sie auf das Profilbild, um die Detailansicht zu öffnen.</p>
+            </div>
+            <div className={styles.headerActions}>
+              <button
+                className={styles.toolbarToggle}
+                onClick={() => setShowSidebar((v) => !v)}
+              >
+                {showSidebar ? '✕ Werkzeuge ausblenden' : '🔧 Suche & Massenänderung'}
+              </button>
+            </div>
+          </div>
         </div>
 
         <div className={styles.content}>
-          <div className={styles.sidebar}>
-            <EmployeeSearch onEmployeeSelected={setSelectedEmployee} />
-            <BulkUpdateSelected />
-          </div>
+          {/* collapsible tools panel */}
+          {showSidebar && (
+            <div className={styles.sidebar}>
+              <EmployeeSearch onEmployeeSelected={setSelectedEmployee} />
+              <BulkUpdateSelected />
+            </div>
+          )}
+
+          {/* main: always-visible directory table */}
           <div className={styles.main}>
-            {selectedEmployee ? (
+            <UserDirectory
+              onEmployeeSelected={setSelectedEmployee}
+              refreshKey={refreshKey}
+            />
+          </div>
+        </div>
+
+        {/* employee detail form — slide-in overlay */}
+        {selectedEmployee && (
+          <div className={styles.formOverlay}>
+            <div className={styles.formPanel}>
+              <button className={styles.closeBtn} onClick={handleCloseForm} title="Schließen">✕</button>
               <EmployeeForm
                 key={selectedEmployee.id}
                 employee={selectedEmployee}
                 onEmployeeRefreshed={handleEmployeeRefreshed}
               />
-            ) : (
-              <div className={styles.placeholder}>
-                <i className={styles.placeholderIcon}>👥</i>
-                <h3>Mitarbeiter auswählen</h3>
-                <p>Suchen Sie links nach einem Mitarbeiter oder wählen Sie unten aus der Übersicht.</p>
-              </div>
-            )}
-            <UserDirectory onEmployeeSelected={setSelectedEmployee} />
+            </div>
           </div>
-        </div>
+        )}
       </Layout>
     </>
   );

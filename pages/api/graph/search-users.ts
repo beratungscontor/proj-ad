@@ -40,7 +40,7 @@ export default async function handler(
       params: {
         $search: `"displayName:${query}" OR "mail:${query}" OR "userPrincipalName:${query}"`,
         $select:
-          'id,userPrincipalName,displayName,givenName,surname,mail,mobilePhone,officeLocation,businessPhones,jobTitle,department,companyName,streetAddress,city,state,postalCode,country',
+          'id,userPrincipalName,displayName,givenName,surname,mail,mobilePhone,officeLocation,businessPhones,jobTitle,department,companyName,streetAddress,city,state,postalCode,country,onPremisesExtensionAttributes',
         $top: 20,
         $count: 'true',
       },
@@ -101,7 +101,7 @@ export default async function handler(
           params: {
             $filter: `startswith(userPrincipalName,'${query}') or startswith(displayName,'${query}')`,
             $select:
-              'id,userPrincipalName,displayName,givenName,surname,mail,mobilePhone,officeLocation,businessPhones,jobTitle,department,companyName,streetAddress,city,state,postalCode,country',
+              'id,userPrincipalName,displayName,givenName,surname,mail,mobilePhone,officeLocation,businessPhones,jobTitle,department,companyName,streetAddress,city,state,postalCode,country,onPremisesExtensionAttributes',
             $top: 20,
           },
         });
