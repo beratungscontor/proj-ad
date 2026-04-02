@@ -34,7 +34,7 @@ export default async function handler(
 
     let allUsers: any[] = [];
     let nextLink: string | null =
-      `https://graph.microsoft.com/v1.0/users?$select=${selectFields}&$top=100&$filter=endsWith(mail,'@beratungscontor.de')&$count=true`;
+      `https://graph.microsoft.com/v1.0/users?$select=${selectFields}&$top=100&$filter=accountEnabled eq true and endsWith(mail,'@beratungscontor.de')&$count=true`;
 
     const graphHeaders = {
       ...headers,
