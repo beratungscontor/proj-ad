@@ -19,7 +19,7 @@ const COLUMNS: ColDef[] = [
   { key: 'phone', label: 'Telefon', editable: true },
   { key: 'officeLocation', label: 'Standort', editable: true },
   { key: 'city', label: 'Stadt', editable: true },
-  { key: 'customAttribute2', label: 'CustomAttribute2', editable: true },
+  { key: 'customAttribute2', label: 'LinkedIn Follow Me Link', editable: true },
 ];
 
 const COLUMN_LABELS: Record<string, string> = {};
