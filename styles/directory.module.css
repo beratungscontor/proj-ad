@@ -251,6 +251,59 @@
   font-style: italic;
 }
 
+/* ── checkbox ─────────────────────────────── */
+.checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--clr-primary);
+}
+
+/* ── selected row ─────────────────────────── */
+.selectedRow {
+  background: rgba(79, 142, 247, 0.08) !important;
+}
+
+.selectedRow:hover {
+  background: rgba(79, 142, 247, 0.12) !important;
+}
+
+/* ── bulk action bar ──────────────────────── */
+.bulkBar {
+  background: var(--clr-surface-2);
+  border: 1px solid var(--clr-primary);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  animation: fadeIn 0.15s ease both;
+}
+
+.bulkInfo {
+  display: flex;
+  align-items: center;
+  font-size: var(--font-size-sm);
+  color: var(--clr-text-primary);
+  margin-bottom: 10px;
+}
+
+.bulkControls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.successBar {
+  text-align: center;
+  padding: 8px 12px;
+  color: #1e8449;
+  background: rgba(39, 174, 96, 0.08);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  margin-top: 6px;
+}
+
 /* ── responsive ───────────────────────────── */
 @media (max-width: 900px) {
   .filterRow {
@@ -261,6 +314,11 @@
   .filterSelect {
     min-width: unset;
     width: 100%;
+  }
+
+  .bulkControls {
+    flex-direction: column;
+    align-items: stretch;
   }
 }
 

@@ -27,7 +27,6 @@ COLUMNS.forEach((c) => { COLUMN_LABELS[c.key] = c.label; });
 
 /* filterable columns */
 const FILTER_KEYS = ['department', 'companyName', 'officeLocation', 'jobTitle', 'city'] as const;
-
 const FILTER_LABELS: Record<string, string> = {
   department: 'Abteilung',
   companyName: 'Firma',
@@ -36,6 +35,25 @@ const FILTER_LABELS: Record<string, string> = {
   city: 'Stadt',
 };
 
+/* bulk-updatable attributes */
+type BulkAttr =
+  | 'businessPhones' | 'officeLocation' | 'department' | 'companyName'
+  | 'streetAddress' | 'city' | 'state' | 'postalCode' | 'country'
+  | 'jobTitle';
+
+const BULK_ATTRS: { value: BulkAttr; label: string; placeholder: string }[] = [
+  { value: 'businessPhones', label: 'Büro-Telefon', placeholder: 'z. B. +49 30 123456' },
+  { value: 'officeLocation', label: 'Büro-Standort', placeholder: 'z. B. Berlin, Gebäude A' },
+  { value: 'department', label: 'Abteilung', placeholder: 'z. B. IT' },
+  { value: 'companyName', label: 'Firma', placeholder: 'z. B. Muster GmbH' },
+  { value: 'jobTitle', label: 'Position', placeholder: 'z. B. Entwickler' },
+  { value: 'streetAddress', label: 'Straße', placeholder: 'z. B. Musterstraße 1' },
+  { value: 'city', label: 'Ort', placeholder: 'z. B. Berlin' },
+  { value: 'state', label: 'Bundesland', placeholder: 'z. B. Berlin' },
+  { value: 'postalCode', label: 'PLZ', placeholder: 'z. B. 10115' },
+  { value: 'country', label: 'Land', placeholder: 'z. B. Deutschland' },
+];
+
 /* ─── helpers ─────────────────────────────────────── */
 function getCellValue(user: Employee, key: string): string {
   if (key === 'phone') return user.businessPhones?.[0] || user.mobilePhone || '';
@@ -43,7 +61,12 @@ function getCellValue(user: Employee, key: string): string {
   return (user as any)[key] || '';
 }
 
-/* ─── pending change type ─────────────────────────── */
+function getBulkCurrentValue(user: Employee, attr: BulkAttr): string {
+  if (attr === 'businessPhones') return user.businessPhones?.[0] || '';
+  return (user as any)[attr] || '';
+}
+
+/* ─── types ───────────────────────────────────────── */
 interface PendingChange {
   userId: string;
   key: string;
@@ -53,7 +76,6 @@ interface PendingChange {
   newValue: string;
 }
 
-/* ─── props ───────────────────────────────────────── */
 interface UserDirectoryProps {
   onEmployeeSelected: (employee: Employee) => void;
   refreshKey?: number;
@@ -76,6 +98,19 @@ export default function UserDirectory({ onEmployeeSelected, refreshKey }: UserDi
   const [pendingChange, setPendingChange] = useState<PendingChange | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  /* multi-select state */
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  /* bulk update state */
+  const [bulkAttr, setBulkAttr] = useState<BulkAttr>('officeLocation');
+  const [bulkValue, setBulkValue] = useState('');
+  const [showBulkReview, setShowBulkReview] = useState(false);
+  const [bulkLoading, setBulkLoading] = useState(false);
+  const [bulkSuccess, setBulkSuccess] = useState<string | null>(null);
+  const [bulkError, setBulkError] = useState<string | null>(null);
+
+  const bulkAttrMeta = useMemo(() => BULK_ATTRS.find((a) => a.value === bulkAttr), [bulkAttr]);
+
   /* ── fetch users ─────────────────────────────────── */
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -93,7 +128,6 @@ export default function UserDirectory({ onEmployeeSelected, refreshKey }: UserDi
   }, []);
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
-
   useEffect(() => {
     if (refreshKey !== undefined && refreshKey > 0) fetchUsers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -104,7 +138,6 @@ export default function UserDirectory({ onEmployeeSelected, refreshKey }: UserDi
     if (users.length === 0) return;
     let cancelled = false;
     const BATCH = 5;
-
     async function loadPhotos() {
       for (let i = 0; i < users.length; i += BATCH) {
         if (cancelled) break;
@@ -116,24 +149,19 @@ export default function UserDirectory({ onEmployeeSelected, refreshKey }: UserDi
               if (!res.ok) return { id: u.id, url: '' };
               const data = await res.json();
               return { id: u.id, url: data.photoUrl || '' };
-            } catch {
-              return { id: u.id, url: '' };
-            }
+            } catch { return { id: u.id, url: '' }; }
           })
         );
         if (cancelled) break;
         setPhotos((prev) => {
           const next = { ...prev };
           for (const r of results) {
-            if (r.status === 'fulfilled' && r.value.url) {
-              next[r.value.id] = r.value.url;
-            }
+            if (r.status === 'fulfilled' && r.value.url) next[r.value.id] = r.value.url;
           }
           return next;
         });
       }
     }
-
     loadPhotos();
     return () => { cancelled = true; };
   }, [users]);
@@ -143,10 +171,7 @@ export default function UserDirectory({ onEmployeeSelected, refreshKey }: UserDi
     const opts: Record<string, string[]> = {};
     for (const fk of FILTER_KEYS) {
       const set = new Set<string>();
-      for (const u of users) {
-        const v = (u as any)[fk];
-        if (v) set.add(v);
-      }
+      for (const u of users) { const v = (u as any)[fk]; if (v) set.add(v); }
       opts[fk] = Array.from(set).sort((a, b) => a.localeCompare(b, 'de'));
     }
     return opts;
@@ -155,7 +180,6 @@ export default function UserDirectory({ onEmployeeSelected, refreshKey }: UserDi
   /* ── apply search + filters ─────────────────────── */
   const filtered = useMemo(() => {
     let result = users;
-
     if (search) {
       const q = search.toLowerCase();
       result = result.filter((u) =>
@@ -171,17 +195,44 @@ export default function UserDirectory({ onEmployeeSelected, refreshKey }: UserDi
         u.surname?.toLowerCase().includes(q)
       );
     }
-
     for (const [key, val] of Object.entries(filters)) {
-      if (val) {
-        result = result.filter((u) => (u as any)[key] === val);
-      }
+      if (val) result = result.filter((u) => (u as any)[key] === val);
     }
-
     return result;
   }, [users, search, filters]);
 
   const activeFilterCount = Object.values(filters).filter(Boolean).length + (search ? 1 : 0);
+
+  /* ── multi-select helpers ───────────────────────── */
+  const toggleSelect = (userId: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(userId)) next.delete(userId);
+      else next.add(userId);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filtered.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filtered.map((u) => u.id)));
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedIds(new Set());
+    setBulkSuccess(null);
+    setBulkError(null);
+  };
+
+  const selectedUsers = useMemo(() =>
+    users.filter((u) => selectedIds.has(u.id)),
+    [users, selectedIds]
+  );
+
+  const allFilteredSelected = filtered.length > 0 && selectedIds.size === filtered.length;
 
   /* ── inline edit handlers ───────────────────────── */
   const startEdit = (userId: string, key: string) => {
@@ -192,25 +243,17 @@ export default function UserDirectory({ onEmployeeSelected, refreshKey }: UserDi
     setTimeout(() => inputRef.current?.focus(), 0);
   };
 
-  const cancelEdit = () => {
-    setEditCell(null);
-    setEditValue('');
-  };
+  const cancelEdit = () => { setEditCell(null); setEditValue(''); };
 
-  /** Called on Enter/blur — shows confirmation popup instead of saving directly */
   const requestSave = () => {
     if (!editCell) return;
     const { userId, key } = editCell;
     const user = users.find((u) => u.id === userId);
     if (!user) return;
-
     const oldValue = getCellValue(user, key);
     if (editValue === oldValue) { cancelEdit(); return; }
-
-    // show confirmation popup
     setPendingChange({
-      userId,
-      key,
+      userId, key,
       userName: user.displayName || user.mail || user.id,
       fieldLabel: COLUMN_LABELS[key] || key,
       oldValue: oldValue || '—',
@@ -218,73 +261,43 @@ export default function UserDirectory({ onEmployeeSelected, refreshKey }: UserDi
     });
   };
 
-  /** Actually save after user confirms */
   const confirmSave = async () => {
     if (!pendingChange) return;
     const { userId, key, oldValue, newValue, userName, fieldLabel } = pendingChange;
-
     setSaving(true);
     try {
       let updates: Record<string, any> = {};
-      if (key === 'phone') {
-        updates = { businessPhones: [editValue] };
-      } else if (key === 'customAttribute2') {
-        updates = {
-          onPremisesExtensionAttributes: {
-            extensionAttribute2: editValue || null,
-          },
-        };
-      } else {
-        updates = { [key]: editValue };
-      }
+      if (key === 'phone') updates = { businessPhones: [editValue] };
+      else if (key === 'customAttribute2') updates = { onPremisesExtensionAttributes: { extensionAttribute2: editValue || null } };
+      else updates = { [key]: editValue };
 
       const res = await fetch('/api/graph/update-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, updates }),
       });
-
       if (!res.ok) {
         const errData = await res.json();
         throw new Error(errData.details || errData.error || 'Fehler beim Speichern');
       }
 
-      // update local state in-place
-      setUsers((prev) =>
-        prev.map((u) => {
-          if (u.id !== userId) return u;
-          if (key === 'phone') return { ...u, businessPhones: [editValue] };
-          if (key === 'customAttribute2') {
-            return {
-              ...u,
-              onPremisesExtensionAttributes: {
-                ...u.onPremisesExtensionAttributes,
-                extensionAttribute2: editValue || null,
-              },
-            };
-          }
-          return { ...u, [key]: editValue };
-        })
-      );
+      setUsers((prev) => prev.map((u) => {
+        if (u.id !== userId) return u;
+        if (key === 'phone') return { ...u, businessPhones: [editValue] };
+        if (key === 'customAttribute2') return { ...u, onPremisesExtensionAttributes: { ...u.onPremisesExtensionAttributes, extensionAttribute2: editValue || null } };
+        return { ...u, [key]: editValue };
+      }));
 
-      // log to audit trail
       fetch('/api/audit/log', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           changedBy: accounts[0]?.username || 'unknown',
-          employeeId: userId,
-          employeeName: userName,
-          changes: {
-            [fieldLabel]: {
-              old: oldValue === '—' ? '' : oldValue,
-              new: newValue === '—' ? '' : newValue,
-            },
-          },
-          status: 'success',
-          editType: 'single',
+          employeeId: userId, employeeName: userName,
+          changes: { [fieldLabel]: { old: oldValue === '—' ? '' : oldValue, new: newValue === '—' ? '' : newValue } },
+          status: 'success', editType: 'single',
         }),
-      }).catch(() => { /* audit log failure is non-blocking */ });
+      }).catch(() => {});
 
       cancelEdit();
       setPendingChange(null);
@@ -295,10 +308,7 @@ export default function UserDirectory({ onEmployeeSelected, refreshKey }: UserDi
     }
   };
 
-  const cancelConfirm = () => {
-    setPendingChange(null);
-    // keep edit cell open so user can adjust
-  };
+  const cancelConfirm = () => { setPendingChange(null); };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') { e.preventDefault(); requestSave(); }
@@ -306,28 +316,55 @@ export default function UserDirectory({ onEmployeeSelected, refreshKey }: UserDi
   };
 
   const handleBlur = () => {
-    // small delay so clicks on confirm button register first
-    setTimeout(() => {
-      if (!pendingChange) requestSave();
-    }, 150);
+    setTimeout(() => { if (!pendingChange) requestSave(); }, 150);
+  };
+
+  /* ── bulk update ────────────────────────────────── */
+  const applyBulk = async () => {
+    const trimmed = bulkValue.trim();
+    if (selectedUsers.length === 0 || !trimmed) return;
+
+    setBulkLoading(true);
+    setBulkError(null);
+    setBulkSuccess(null);
+    try {
+      const res = await fetch('/api/graph/bulk-update-selected', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userIds: selectedUsers.map((u) => u.id),
+          updates: { [bulkAttr]: bulkAttr === 'businessPhones' ? [trimmed] : trimmed },
+          changedBy: accounts[0]?.username || 'unknown',
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setBulkError(data.details || data.error || 'Massenänderung fehlgeschlagen.');
+        return;
+      }
+      setBulkSuccess(`✓ ${data.updated} von ${data.total} aktualisiert.${data.failed ? ` ${data.failed} fehlgeschlagen.` : ''}`);
+      setShowBulkReview(false);
+      // refresh user data in-place
+      fetchUsers();
+    } catch {
+      setBulkError('Netzwerkfehler. Bitte erneut versuchen.');
+    } finally {
+      setBulkLoading(false);
+    }
   };
 
   /* ── clear all filters ──────────────────────────── */
-  const clearFilters = () => {
-    setSearch('');
-    setFilters({});
-  };
+  const clearFilters = () => { setSearch(''); setFilters({}); };
 
   /* ── render ──────────────────────────────────────── */
   return (
     <div className={dirStyles.directorySection}>
-      {/* confirmation popup */}
+      {/* ── single-edit confirmation popup ────────── */}
       {pendingChange && (
         <div className={dirStyles.confirmOverlay}>
           <div className={dirStyles.confirmBox}>
             <h3 className={dirStyles.confirmTitle}>Änderung bestätigen</h3>
             <p className={dirStyles.confirmUser}>{pendingChange.userName}</p>
-
             <div className={dirStyles.confirmDetail}>
               <div className={dirStyles.confirmField}>{pendingChange.fieldLabel}</div>
               <div className={dirStyles.confirmDiff}>
@@ -336,20 +373,9 @@ export default function UserDirectory({ onEmployeeSelected, refreshKey }: UserDi
                 <span className={dirStyles.confirmNew}>{pendingChange.newValue}</span>
               </div>
             </div>
-
             <div className={dirStyles.confirmActions}>
-              <button
-                className={dirStyles.confirmCancelBtn}
-                onClick={cancelConfirm}
-                disabled={saving}
-              >
-                Abbrechen
-              </button>
-              <button
-                className={dirStyles.confirmSaveBtn}
-                onClick={confirmSave}
-                disabled={saving}
-              >
+              <button className={dirStyles.confirmCancelBtn} onClick={cancelConfirm} disabled={saving}>Abbrechen</button>
+              <button className={dirStyles.confirmSaveBtn} onClick={confirmSave} disabled={saving}>
                 {saving ? '⏳ Speichern…' : '✔ Bestätigen & Speichern'}
               </button>
             </div>
@@ -357,7 +383,45 @@ export default function UserDirectory({ onEmployeeSelected, refreshKey }: UserDi
         </div>
       )}
 
-      {/* toolbar */}
+      {/* ── bulk review modal ────────────────────── */}
+      {showBulkReview && (
+        <div className={dirStyles.confirmOverlay}>
+          <div className={dirStyles.confirmBox} style={{ maxWidth: '560px' }}>
+            <h3 className={dirStyles.confirmTitle}>Massenänderung bestätigen</h3>
+            <p className={dirStyles.confirmUser}>
+              {selectedUsers.length} Mitarbeiter — <strong>{bulkAttrMeta?.label}</strong> → <strong>{bulkValue.trim()}</strong>
+            </p>
+            <div style={{ maxHeight: '300px', overflowY: 'auto', marginBottom: '16px' }}>
+              <table className={dirStyles.table} style={{ fontSize: '0.82rem' }}>
+                <thead>
+                  <tr>
+                    <th>Mitarbeiter</th>
+                    <th>Aktueller Wert</th>
+                    <th>Neuer Wert</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedUsers.map((u) => (
+                    <tr key={u.id}>
+                      <td style={{ fontWeight: 600 }}>{u.displayName}</td>
+                      <td><span className={dirStyles.confirmOld}>{getBulkCurrentValue(u, bulkAttr) || '—'}</span></td>
+                      <td><span className={dirStyles.confirmNew}>{bulkValue.trim()}</span></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className={dirStyles.confirmActions}>
+              <button className={dirStyles.confirmCancelBtn} onClick={() => setShowBulkReview(false)} disabled={bulkLoading}>Abbrechen</button>
+              <button className={dirStyles.confirmSaveBtn} onClick={applyBulk} disabled={bulkLoading}>
+                {bulkLoading ? '⏳ Wird angewendet…' : `✔ ${selectedUsers.length} Mitarbeiter aktualisieren`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── toolbar ──────────────────────────────── */}
       <div className={dirStyles.toolbar}>
         <div className={dirStyles.searchBox}>
           <span className={dirStyles.searchIcon}>🔍</span>
@@ -370,7 +434,6 @@ export default function UserDirectory({ onEmployeeSelected, refreshKey }: UserDi
             autoComplete="off"
           />
         </div>
-
         <div className={dirStyles.filterRow}>
           {FILTER_KEYS.map((fk) => (
             <select
@@ -385,7 +448,6 @@ export default function UserDirectory({ onEmployeeSelected, refreshKey }: UserDi
               ))}
             </select>
           ))}
-
           {activeFilterCount > 0 && (
             <button className={dirStyles.clearBtn} onClick={clearFilters} title="Alle Filter löschen">
               ✕ Filter ({activeFilterCount})
@@ -394,9 +456,47 @@ export default function UserDirectory({ onEmployeeSelected, refreshKey }: UserDi
         </div>
       </div>
 
-      {loading && (
-        <div className={dirStyles.loadingBar}>Mitarbeiterdaten werden geladen…</div>
+      {/* ── bulk action bar (visible when users selected) ── */}
+      {selectedIds.size > 0 && (
+        <div className={dirStyles.bulkBar}>
+          <div className={dirStyles.bulkInfo}>
+            <strong>{selectedIds.size}</strong> Mitarbeiter ausgewählt
+            <button className={dirStyles.clearBtn} onClick={clearSelection} style={{ marginLeft: '8px' }}>
+              ✕ Auswahl aufheben
+            </button>
+          </div>
+          <div className={dirStyles.bulkControls}>
+            <select
+              value={bulkAttr}
+              onChange={(e) => setBulkAttr(e.target.value as BulkAttr)}
+              className={dirStyles.filterSelect}
+            >
+              {BULK_ATTRS.map((a) => (
+                <option key={a.value} value={a.value}>{a.label}</option>
+              ))}
+            </select>
+            <input
+              type="text"
+              value={bulkValue}
+              onChange={(e) => setBulkValue(e.target.value)}
+              placeholder={bulkAttrMeta?.placeholder || 'Neuer Wert…'}
+              className={dirStyles.searchInput}
+              style={{ maxWidth: '220px' }}
+            />
+            <button
+              className={dirStyles.confirmSaveBtn}
+              onClick={() => { setBulkError(null); setBulkSuccess(null); setShowBulkReview(true); }}
+              disabled={!bulkValue.trim() || bulkLoading}
+            >
+              Überprüfen & Anwenden
+            </button>
+          </div>
+          {bulkError && <div className={dirStyles.errorBar} style={{ marginTop: '6px' }}>✕ {bulkError}</div>}
+          {bulkSuccess && <div className={dirStyles.successBar}>{bulkSuccess}</div>}
+        </div>
       )}
+
+      {loading && <div className={dirStyles.loadingBar}>Mitarbeiterdaten werden geladen…</div>}
       {error && <div className={dirStyles.errorBar}>{error}</div>}
 
       {!loading && users.length > 0 && (
@@ -405,6 +505,15 @@ export default function UserDirectory({ onEmployeeSelected, refreshKey }: UserDi
             <table className={dirStyles.table}>
               <thead>
                 <tr>
+                  <th style={{ width: '32px' }}>
+                    <input
+                      type="checkbox"
+                      checked={allFilteredSelected}
+                      onChange={toggleSelectAll}
+                      title="Alle auswählen"
+                      className={dirStyles.checkbox}
+                    />
+                  </th>
                   <th style={{ width: '36px' }}></th>
                   {COLUMNS.map((col) => (
                     <th key={col.key}>{col.label}</th>
@@ -412,58 +521,69 @@ export default function UserDirectory({ onEmployeeSelected, refreshKey }: UserDi
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((user) => (
-                  <tr key={user.id} className={dirStyles.row}>
-                    <td>
-                      <div
-                        className={dirStyles.miniAvatar}
-                        onClick={() => onEmployeeSelected(user)}
-                        title="Profil öffnen"
-                      >
-                        {photos[user.id] ? (
-                          <img src={photos[user.id]} alt="" />
-                        ) : (
-                          user.displayName?.charAt(0).toUpperCase() || '?'
-                        )}
-                      </div>
-                    </td>
+                {filtered.map((user) => {
+                  const isChecked = selectedIds.has(user.id);
+                  return (
+                    <tr key={user.id} className={`${dirStyles.row} ${isChecked ? dirStyles.selectedRow : ''}`}>
+                      <td>
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => toggleSelect(user.id)}
+                          className={dirStyles.checkbox}
+                        />
+                      </td>
+                      <td>
+                        <div
+                          className={dirStyles.miniAvatar}
+                          onClick={() => onEmployeeSelected(user)}
+                          title="Profil öffnen"
+                        >
+                          {photos[user.id] ? (
+                            <img src={photos[user.id]} alt="" />
+                          ) : (
+                            user.displayName?.charAt(0).toUpperCase() || '?'
+                          )}
+                        </div>
+                      </td>
 
-                    {COLUMNS.map((col) => {
-                      const isEditing = editCell?.userId === user.id && editCell?.key === col.key;
-                      const value = getCellValue(user, col.key);
+                      {COLUMNS.map((col) => {
+                        const isEditing = editCell?.userId === user.id && editCell?.key === col.key;
+                        const value = getCellValue(user, col.key);
 
-                      if (isEditing) {
+                        if (isEditing) {
+                          return (
+                            <td key={col.key} className={dirStyles.editingCell}>
+                              <input
+                                ref={inputRef}
+                                className={dirStyles.cellInput}
+                                value={editValue}
+                                onChange={(e) => setEditValue(e.target.value)}
+                                onKeyDown={handleKeyDown}
+                                onBlur={handleBlur}
+                                disabled={saving}
+                              />
+                            </td>
+                          );
+                        }
+
                         return (
-                          <td key={col.key} className={dirStyles.editingCell}>
-                            <input
-                              ref={inputRef}
-                              className={dirStyles.cellInput}
-                              value={editValue}
-                              onChange={(e) => setEditValue(e.target.value)}
-                              onKeyDown={handleKeyDown}
-                              onBlur={handleBlur}
-                              disabled={saving}
-                            />
+                          <td
+                            key={col.key}
+                            className={col.editable ? dirStyles.editableCell : undefined}
+                            onClick={() => col.editable ? startEdit(user.id, col.key) : undefined}
+                            title={col.editable ? 'Klicken zum Bearbeiten' : undefined}
+                          >
+                            {value || <span className={dirStyles.empty}>—</span>}
                           </td>
                         );
-                      }
-
-                      return (
-                        <td
-                          key={col.key}
-                          className={col.editable ? dirStyles.editableCell : undefined}
-                          onClick={() => col.editable ? startEdit(user.id, col.key) : undefined}
-                          title={col.editable ? 'Klicken zum Bearbeiten' : undefined}
-                        >
-                          {value || <span className={dirStyles.empty}>—</span>}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
+                      })}
+                    </tr>
+                  );
+                })}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={COLUMNS.length + 1} className={dirStyles.noResults}>
+                    <td colSpan={COLUMNS.length + 2} className={dirStyles.noResults}>
                       Keine Mitarbeiter gefunden
                     </td>
                   </tr>
@@ -473,6 +593,7 @@ export default function UserDirectory({ onEmployeeSelected, refreshKey }: UserDi
           </div>
           <div className={dirStyles.rowCount}>
             {filtered.length} von {users.length} Mitarbeitern
+            {selectedIds.size > 0 && ` · ${selectedIds.size} ausgewählt`}
           </div>
         </>
       )}
