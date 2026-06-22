@@ -79,10 +79,11 @@ interface PendingChange {
 interface UserDirectoryProps {
   onEmployeeSelected: (employee: Employee) => void;
   refreshKey?: number;
+  hasWriteAccess?: boolean;
 }
 
 /* ═══════════════════════════════════════════════════ */
-export default function UserDirectory({ onEmployeeSelected, refreshKey }: UserDirectoryProps) {
+export default function UserDirectory({ onEmployeeSelected, refreshKey, hasWriteAccess = true }: UserDirectoryProps) {
   const { accounts } = useMsal();
   const [users, setUsers] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(false);
@@ -236,6 +237,7 @@ export default function UserDirectory({ onEmployeeSelected, refreshKey }: UserDi
 
   /* ── inline edit handlers ───────────────────────── */
   const startEdit = (userId: string, key: string) => {
+    if (!hasWriteAccess) return;
     const user = users.find((u) => u.id === userId);
     if (!user) return;
     setEditCell({ userId, key });
@@ -457,7 +459,7 @@ export default function UserDirectory({ onEmployeeSelected, refreshKey }: UserDi
       </div>
 
       {/* ── bulk action bar (visible when users selected) ── */}
-      {selectedIds.size > 0 && (
+      {hasWriteAccess && selectedIds.size > 0 && (
         <div className={dirStyles.bulkBar}>
           <div className={dirStyles.bulkInfo}>
             <strong>{selectedIds.size}</strong> Mitarbeiter ausgewählt
@@ -505,15 +507,17 @@ export default function UserDirectory({ onEmployeeSelected, refreshKey }: UserDi
             <table className={dirStyles.table}>
               <thead>
                 <tr>
-                  <th style={{ width: '32px' }}>
-                    <input
-                      type="checkbox"
-                      checked={allFilteredSelected}
-                      onChange={toggleSelectAll}
-                      title="Alle auswählen"
-                      className={dirStyles.checkbox}
-                    />
-                  </th>
+                  {hasWriteAccess && (
+                    <th style={{ width: '32px' }}>
+                      <input
+                        type="checkbox"
+                        checked={allFilteredSelected}
+                        onChange={toggleSelectAll}
+                        title="Alle auswählen"
+                        className={dirStyles.checkbox}
+                      />
+                    </th>
+                  )}
                   <th style={{ width: '36px' }}></th>
                   {COLUMNS.map((col) => (
                     <th key={col.key}>{col.label}</th>
@@ -525,14 +529,16 @@ export default function UserDirectory({ onEmployeeSelected, refreshKey }: UserDi
                   const isChecked = selectedIds.has(user.id);
                   return (
                     <tr key={user.id} className={`${dirStyles.row} ${isChecked ? dirStyles.selectedRow : ''}`}>
-                      <td>
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => toggleSelect(user.id)}
-                          className={dirStyles.checkbox}
-                        />
-                      </td>
+                      {hasWriteAccess && (
+                        <td>
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => toggleSelect(user.id)}
+                            className={dirStyles.checkbox}
+                          />
+                        </td>
+                      )}
                       <td>
                         <div
                           className={dirStyles.miniAvatar}
@@ -567,12 +573,13 @@ export default function UserDirectory({ onEmployeeSelected, refreshKey }: UserDi
                           );
                         }
 
+                        const isEditable = col.editable && hasWriteAccess;
                         return (
                           <td
                             key={col.key}
-                            className={col.editable ? dirStyles.editableCell : undefined}
-                            onClick={() => col.editable ? startEdit(user.id, col.key) : undefined}
-                            title={col.editable ? 'Klicken zum Bearbeiten' : undefined}
+                            className={isEditable ? dirStyles.editableCell : undefined}
+                            onClick={() => isEditable ? startEdit(user.id, col.key) : undefined}
+                            title={isEditable ? 'Klicken zum Bearbeiten' : undefined}
                           >
                             {value || <span className={dirStyles.empty}>—</span>}
                           </td>

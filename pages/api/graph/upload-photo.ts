@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getGraphAccessToken } from '../../../lib/graph-token';
 import axios from 'axios';
+import { checkEditorPimByUpn } from '../../../lib/pim-check';
 
 // Disable Next.js default body parser so we can stream the raw image buffer
 export const config = {
@@ -17,6 +18,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { id } = req.query;
     if (!id || typeof id !== 'string') {
         return res.status(400).json({ error: 'Employee ID is required.' });
+    }
+
+    // PIM check: verify the caller has active Editor permissions
+    const changedBy = req.headers['x-changed-by'] as string | undefined;
+    if (changedBy && process.env.EDITOR_SECURITY_GROUP_ID) {
+        const pimStatus = await checkEditorPimByUpn(changedBy);
+        if (!pimStatus.hasWriteAccess) {
+            return res.status(403).json({
+                error: 'Editor-Berechtigung erforderlich',
+                details: 'Bitte aktivieren Sie die Editor-Berechtigung über Azure PIM.',
+            });
+        }
     }
 
     try {

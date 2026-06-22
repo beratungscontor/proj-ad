@@ -8,6 +8,8 @@ import BulkUpdateSelected from '../components/BulkUpdateSelected';
 import EmployeeForm from '../components/EmployeeForm';
 import UserDirectory from '../components/UserDirectory';
 import Layout from '../components/Layout';
+import EditorModeBanner from '../components/EditorModeBanner';
+import PimInstructions from '../components/PimInstructions';
 import { Employee } from '../lib/types';
 import styles from '../styles/dashboard.module.css';
 
@@ -21,6 +23,9 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
   const [showSidebar, setShowSidebar] = useState(false);
+  const [hasWriteAccess, setHasWriteAccess] = useState(true);
+  const [writeExpiresAt, setWriteExpiresAt] = useState<string | null>(null);
+  const [showPimInstructions, setShowPimInstructions] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated && inProgress === InteractionStatus.None) {
@@ -32,6 +37,14 @@ export default function Dashboard() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, inProgress]);
+
+  // Re-check access every 60 seconds to detect PIM activation/expiration
+  useEffect(() => {
+    if (!isAuthenticated || !hasAccess) return;
+    const interval = setInterval(() => { checkAccess(); }, 60000);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, hasAccess]);
 
   const checkAccess = async () => {
     try {
@@ -50,8 +63,11 @@ export default function Dashboard() {
       });
 
       const accessData = await accessCheckResponse.json();
-      setHasAccess(accessData.hasAccess);
-      if (!accessData.hasAccess) {
+      const readAccess = accessData.hasReadAccess !== undefined ? accessData.hasReadAccess : accessData.hasAccess;
+      setHasAccess(readAccess);
+      setHasWriteAccess(accessData.hasWriteAccess !== undefined ? accessData.hasWriteAccess : readAccess);
+      setWriteExpiresAt(accessData.writeExpiresAt || null);
+      if (!readAccess) {
         setAccessError('Sie sind kein Mitglied der erforderlichen Sicherheitsgruppe für den Zugriff auf dieses Dashboard.');
       }
     } catch {
@@ -103,19 +119,26 @@ export default function Dashboard() {
         <meta name="description" content="Verwalten Sie Mitarbeiterprofile in Microsoft Entra ID." />
       </Head>
       <Layout>
+        <EditorModeBanner
+          hasWriteAccess={hasWriteAccess}
+          writeExpiresAt={writeExpiresAt}
+          onShowInstructions={() => setShowPimInstructions(true)}
+        />
         <div className={styles.dashboardHeader}>
           <div className={styles.headerRow}>
             <div>
               <h1>Mitarbeiterverzeichnis</h1>
-              <p>Klicken Sie auf ein Feld, um es direkt zu bearbeiten. Klicken Sie auf das Profilbild, um die Detailansicht zu öffnen.</p>
+              <p>{hasWriteAccess ? 'Klicken Sie auf ein Feld, um es direkt zu bearbeiten. Klicken Sie auf das Profilbild, um die Detailansicht zu öffnen.' : 'Klicken Sie auf das Profilbild, um die Detailansicht zu öffnen.'}</p>
             </div>
             <div className={styles.headerActions}>
-              <button
-                className={styles.toolbarToggle}
-                onClick={() => setShowSidebar((v) => !v)}
-              >
-                {showSidebar ? '✕ Werkzeuge ausblenden' : '🔧 Suche & Massenänderung'}
-              </button>
+              {hasWriteAccess && (
+                <button
+                  className={styles.toolbarToggle}
+                  onClick={() => setShowSidebar((v) => !v)}
+                >
+                  {showSidebar ? '✕ Werkzeuge ausblenden' : '🔧 Suche & Massenänderung'}
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -134,6 +157,7 @@ export default function Dashboard() {
             <UserDirectory
               onEmployeeSelected={setSelectedEmployee}
               refreshKey={refreshKey}
+              hasWriteAccess={hasWriteAccess}
             />
           </div>
         </div>
@@ -147,9 +171,14 @@ export default function Dashboard() {
                 key={selectedEmployee.id}
                 employee={selectedEmployee}
                 onEmployeeRefreshed={handleEmployeeRefreshed}
+                hasWriteAccess={hasWriteAccess}
               />
             </div>
           </div>
+        )}
+        
+        {showPimInstructions && (
+          <PimInstructions onClose={() => setShowPimInstructions(false)} />
         )}
       </Layout>
     </>

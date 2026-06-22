@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import axios from 'axios';
 import { getGraphAccessToken } from '../../../lib/graph-token';
 import { addAuditLog } from '../../../lib/audit-store';
+import { checkEditorPimByUpn } from '../../../lib/pim-check';
 
 const BULK_ALLOWED_FIELDS = new Set([
   'businessPhones',
@@ -87,6 +88,17 @@ export default async function handler(
   }
   if (!updates || typeof updates !== 'object') {
     return res.status(400).json({ error: 'updates is required' });
+  }
+
+  // PIM check: verify the caller has active Editor permissions
+  if (actor && actor !== 'bulk-operation' && process.env.EDITOR_SECURITY_GROUP_ID) {
+    const pimStatus = await checkEditorPimByUpn(actor);
+    if (!pimStatus.hasWriteAccess) {
+      return res.status(403).json({
+        error: 'Editor-Berechtigung erforderlich',
+        details: 'Bitte aktivieren Sie die Editor-Berechtigung über Azure PIM.',
+      });
+    }
   }
 
   // Build clean payload

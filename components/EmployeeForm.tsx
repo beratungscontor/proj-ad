@@ -12,6 +12,7 @@ import styles from '../styles/form.module.css';
 interface EmployeeFormProps {
   employee: Employee;
   onEmployeeRefreshed?: (employee: Employee) => void;
+  hasWriteAccess?: boolean;
 }
 
 // Fields Graph API accepts on PATCH /users/{id} — mail excluded (read-only)
@@ -22,7 +23,7 @@ const PATCHABLE_FIELDS = [
   'city', 'state', 'postalCode', 'country',
 ] as const;
 
-export default function EmployeeForm({ employee, onEmployeeRefreshed }: EmployeeFormProps) {
+export default function EmployeeForm({ employee, onEmployeeRefreshed, hasWriteAccess = true }: EmployeeFormProps) {
   const { accounts } = useMsal();
   const [formData, setFormData] = useState<Employee>(employee);
   const [showReview, setShowReview] = useState(false);
@@ -215,26 +216,37 @@ export default function EmployeeForm({ employee, onEmployeeRefreshed }: Employee
   return (
     <div className={styles.formContainer}>
       <div className={styles.employeeHeader}>
-        <label className={styles.avatarUploadWrapper}>
-          <input
-            type="file"
-            accept="image/jpeg,image/png"
-            onChange={handlePhotoSelect}
-            className={styles.hiddenFileInput}
-            disabled={loading}
-          />
-          <div className={`${styles.employeeAvatar} ${styles.avatarEditable}`}>
+        {hasWriteAccess ? (
+          <label className={styles.avatarUploadWrapper}>
+            <input
+              type="file"
+              accept="image/jpeg,image/png"
+              onChange={handlePhotoSelect}
+              className={styles.hiddenFileInput}
+              disabled={loading}
+            />
+            <div className={`${styles.employeeAvatar} ${styles.avatarEditable}`}>
+              {photoPreview ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={photoPreview} alt="Profile" className={styles.avatarImage} />
+              ) : (
+                employee.displayName?.charAt(0).toUpperCase() || '?'
+              )}
+              <div className={styles.avatarOverlay}>
+                <span className={styles.avatarEditIcon}>📷</span>
+              </div>
+            </div>
+          </label>
+        ) : (
+          <div className={styles.employeeAvatar}>
             {photoPreview ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={photoPreview} alt="Profile" className={styles.avatarImage} />
             ) : (
               employee.displayName?.charAt(0).toUpperCase() || '?'
             )}
-            <div className={styles.avatarOverlay}>
-              <span className={styles.avatarEditIcon}>📷</span>
-            </div>
           </div>
-        </label>
+        )}
         <div>
           <h2 className={styles.employeeName}>{employee.displayName}</h2>
           <p className={styles.employeeUpn}>{employee.userPrincipalName}</p>
@@ -258,25 +270,32 @@ export default function EmployeeForm({ employee, onEmployeeRefreshed }: Employee
 
       <div className={styles.tabContent}>
         {activeTab === 'personal' && (
-          <PersonalInfoSection formData={formData} onChange={handleFieldChange} />
+          <PersonalInfoSection formData={formData} onChange={handleFieldChange} readOnly={!hasWriteAccess} />
         )}
         {activeTab === 'work' && (
-          <WorkInfoSection formData={formData} onChange={handleFieldChange} />
+          <WorkInfoSection formData={formData} onChange={handleFieldChange} readOnly={!hasWriteAccess} />
         )}
         {activeTab === 'address' && (
-          <AddressSection formData={formData} onChange={handleFieldChange} />
+          <AddressSection formData={formData} onChange={handleFieldChange} readOnly={!hasWriteAccess} />
         )}
       </div>
 
-      <div className={styles.actions}>
-        <button
-          className={styles.submitButton}
-          onClick={() => setShowReview(true)}
-          disabled={loading}
-        >
-          {loading ? '⏳ Speichern...' : '✔ Überprüfen & Speichern'}
-        </button>
-      </div>
+      {hasWriteAccess && (
+        <div className={styles.actions}>
+          <button
+            className={styles.submitButton}
+            onClick={() => setShowReview(true)}
+            disabled={loading}
+          >
+            {loading ? '⏳ Speichern...' : '✔ Überprüfen & Speichern'}
+          </button>
+        </div>
+      )}
+      {!hasWriteAccess && (
+        <div className={styles.readOnlyNotice}>
+          Nur-Lese-Modus — Aktivieren Sie die Editor-Berechtigung über Azure PIM, um Änderungen vorzunehmen.
+        </div>
+      )}
 
       {showReview && (
         <ReviewModal

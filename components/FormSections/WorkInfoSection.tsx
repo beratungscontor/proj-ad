@@ -4,10 +4,11 @@ import styles from '../../styles/form.module.css';
 interface WorkInfoSectionProps {
   formData: Partial<Employee>;
   onChange: (field: string, value: string) => void;
+  readOnly?: boolean;
 }
-export default function WorkInfoSection({ formData, onChange }: WorkInfoSectionProps) {
+export default function WorkInfoSection({ formData, onChange, readOnly = false }: WorkInfoSectionProps) {
   return (
-    <div className={styles.section}>
+    <div className={styles.section} style={{ opacity: readOnly ? 0.7 : 1, pointerEvents: readOnly ? 'none' : 'auto' }}>
       <div className={styles.formGroup}>
         <label>Position</label>
         <input
@@ -15,6 +16,8 @@ export default function WorkInfoSection({ formData, onChange }: WorkInfoSectionP
           value={formData.jobTitle || ''}
           onChange={(e) => onChange('jobTitle', e.target.value)}
           placeholder="z.B. Software Engineer"
+          readOnly={readOnly}
+          disabled={readOnly}
         />
       </div>
 
@@ -25,6 +28,8 @@ export default function WorkInfoSection({ formData, onChange }: WorkInfoSectionP
           value={formData.department || ''}
           onChange={(e) => onChange('department', e.target.value)}
           placeholder="z.B. IT-Abteilung"
+          readOnly={readOnly}
+          disabled={readOnly}
         />
       </div>
 
@@ -35,6 +40,8 @@ export default function WorkInfoSection({ formData, onChange }: WorkInfoSectionP
           value={formData.companyName || ''}
           onChange={(e) => onChange('companyName', e.target.value)}
           placeholder="Firmenname"
+          readOnly={readOnly}
+          disabled={readOnly}
         />
       </div>
     </div>

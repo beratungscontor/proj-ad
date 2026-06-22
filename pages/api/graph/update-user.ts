@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import axios from 'axios';
 import { getGraphAccessToken } from '../../../lib/graph-token';
+import { checkEditorPimByUpn } from '../../../lib/pim-check';
 
 interface UpdateResponse {
   success: boolean;
@@ -43,6 +44,18 @@ export default async function handler(
 
   if (!userId) {
     return res.status(400).json({ error: 'User ID required' });
+  }
+
+  // PIM check: verify the caller has active Editor permissions
+  const changedBy = req.body.changedBy;
+  if (changedBy && process.env.EDITOR_SECURITY_GROUP_ID) {
+    const pimStatus = await checkEditorPimByUpn(changedBy);
+    if (!pimStatus.hasWriteAccess) {
+      return res.status(403).json({
+        error: 'Editor-Berechtigung erforderlich',
+        details: 'Bitte aktivieren Sie die Editor-Berechtigung über Azure PIM.',
+      });
+    }
   }
 
   try {
