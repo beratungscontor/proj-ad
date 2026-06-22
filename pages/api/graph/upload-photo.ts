@@ -22,7 +22,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // PIM check: verify the caller has active Editor permissions
     const changedBy = req.headers['x-changed-by'] as string | undefined;
-    if (changedBy && process.env.EDITOR_SECURITY_GROUP_ID) {
+    if (process.env.EDITOR_SECURITY_GROUP_ID) {
+        if (!changedBy || changedBy === 'unknown' || changedBy === 'bulk-operation') {
+            return res.status(403).json({
+                error: 'Editor-Berechtigung erforderlich',
+                details: 'Fehlende oder ungültige Benutzeridentifikation (x-changed-by).',
+            });
+        }
         const pimStatus = await checkEditorPimByUpn(changedBy);
         if (!pimStatus.hasWriteAccess) {
             return res.status(403).json({

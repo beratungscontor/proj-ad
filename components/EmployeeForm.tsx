@@ -115,7 +115,10 @@ export default function EmployeeForm({ employee, onEmployeeRefreshed, hasWriteAc
       if (selectedPhoto) {
         const photoResponse = await fetch(`/api/graph/upload-photo?id=${employee.id}`, {
           method: 'PUT',
-          headers: { 'Content-Type': selectedPhoto.type },
+          headers: { 
+            'Content-Type': selectedPhoto.type,
+            'x-changed-by': accounts[0]?.username || 'unknown',
+          },
           body: selectedPhoto,
         });
 
@@ -143,7 +146,11 @@ export default function EmployeeForm({ employee, onEmployeeRefreshed, hasWriteAc
       const response = await fetch('/api/graph/update-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: employee.id, updates }),
+        body: JSON.stringify({ 
+          userId: employee.id, 
+          updates,
+          changedBy: accounts[0]?.username || 'unknown',
+        }),
       });
 
       const data = await response.json();

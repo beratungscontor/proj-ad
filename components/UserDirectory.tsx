@@ -276,7 +276,11 @@ export default function UserDirectory({ onEmployeeSelected, refreshKey, hasWrite
       const res = await fetch('/api/graph/update-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, updates }),
+        body: JSON.stringify({ 
+          userId, 
+          updates,
+          changedBy: accounts[0]?.username || 'unknown',
+        }),
       });
       if (!res.ok) {
         const errData = await res.json();
